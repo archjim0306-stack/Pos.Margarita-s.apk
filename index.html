@@ -769,6 +769,14 @@ select{appearance:none;background-image:url("data:image/jpeg;base64,/9j/4AAQSkZJ
 
 /* PERMISOS POR PESTAÑA */
 .perm-off{display:none!important}
+.hist-dia-card{background:var(--wh);border:1.5px solid var(--cr-d);border-left:4px solid var(--or);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:background .15s}
+.hist-dia-card.tapped{background:var(--cr-d)}
+.hist-dia-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.hist-dia-tit{font-size:13.5px;font-weight:700;color:var(--br)}
+.hist-dia-total{font-family:'Cinzel',serif;font-weight:700;color:var(--or);font-size:15px;white-space:nowrap}
+.hist-dia-sub{font-size:11px;color:var(--gy);margin-top:3px}
+.hist-dia-kpi{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--cr-d);color:var(--br)}
+.hist-dia-kpi:last-child{border-bottom:none}
 /* AVISOS / BUZÓN */
 .jnav-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;min-width:18px;text-align:center}
 .hamburger-btn{position:relative}
@@ -1290,6 +1298,16 @@ document.dispatchEvent(new Event('db-ready'));
       <button class="btn btn-gy" onclick="closeModal('modal-buzon-nuevo')">Cancelar</button>
       <button class="btn btn-or" style="flex:2" onclick="enviarMensajeNuevoJefe()">Enviar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL MOVIMIENTOS DEL DÍA (historial) -->
+<div id="modal-hist-dia" class="overlay hidden" style="z-index:850">
+  <div class="mbox" style="max-height:88vh;display:flex;flex-direction:column">
+    <h3 id="hist-dia-titulo"></h3>
+    <div id="hist-dia-resumen" style="background:var(--cr);border-radius:var(--rs);padding:8px 12px;margin:8px 0 10px"></div>
+    <div id="hist-dia-lista" style="overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch"></div>
+    <button class="btn btn-gy btn-full" style="margin-top:10px" onclick="closeModal('modal-hist-dia');_histDiaAbierto=null">Cerrar</button>
   </div>
 </div>
 
@@ -5394,24 +5412,32 @@ function toggleFiltroMesero(tipo){
   renderMeseroOrdenes();
 }
 
+// ── Fecha/hora de órdenes ──
+function _esDeHoy(ts){
+  if(!ts) return true; // recién creada: el servidor aún no pone la hora
+  const d=_tsADate(ts); if(!d) return true;
+  return d.toDateString()===new Date().toDateString();
+}
+function _horaExacta(ts){
+  const d=_tsADate(ts); if(!d) return 'Ahora';
+  return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':')+' hrs';
+}
 function renderMeseroOrdenes(){
   const el=document.getElementById('mordenes-list');
   const empty=document.getElementById('mordenes-empty');
   if(!el) return;
 
   let items=[];
-  if(_filtrosMesero.pendiente) items.push(...ordenes.filter(o=>o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe'));
-  if(_filtrosMesero.lista)     items.push(...ordenes.filter(o=>o.estado==='lista'));
-  if(_filtrosMesero.cobrada)   items.push(...historial.filter(h=>!h.tipo||h.tipo==='venta').slice(0,20).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosMesero.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosMesero.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
+  if(_filtrosMesero.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   const ordenEstado={cancel_solicitada:0,revision_jefe:1,pendiente:2,lista:3,cobrada:4};
-  items.sort((a,b)=>(ordenEstado[a.estado]||2)-(ordenEstado[b.estado]||2));
+  items.sort((a,b)=>((ordenEstado[a.estado]??2)-(ordenEstado[b.estado]??2)) || ((_tsADate(b.ts)||new Date())-(_tsADate(a.ts)||new Date())));
 
   empty.classList.toggle('hidden', items.length>0);
   el.innerHTML = items.map(o=>{
-    const t = o.ts instanceof Date ? o.ts.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts?.toDate ? o.ts.toDate().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts ? new Date(o.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
+    const t = _horaExacta(o.ts);
     const esCobrada = o.estado==='cobrada'||o._histo;
     const esEspecial = o.estado==='cancel_solicitada'||o.estado==='revision_jefe';
     const statusLabel = _statusLabelOrden(o.estado);
@@ -5809,18 +5835,16 @@ function renderBarra(){
   if(!el){ return; }
 
   let items=[];
-  if(_filtrosBarra.pendiente) items.push(...ordenes.filter(o=>o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe'));
-  if(_filtrosBarra.lista)     items.push(...ordenes.filter(o=>o.estado==='lista'));
-  if(_filtrosBarra.cobrada)   items.push(...historial.filter(h=>!h.tipo||h.tipo==='venta').slice(0,15).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosBarra.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosBarra.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
+  if(_filtrosBarra.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   const ordenEstado={pendiente:0,cancel_solicitada:1,revision_jefe:2,lista:3,cobrada:4};
-  items.sort((a,b)=>(ordenEstado[a.estado]||0)-(ordenEstado[b.estado]||0));
+  items.sort((a,b)=>((ordenEstado[a.estado]??0)-(ordenEstado[b.estado]??0)) || ((_tsADate(b.ts)||new Date())-(_tsADate(a.ts)||new Date())));
 
   empty.classList.toggle('hidden', items.length>0);
   el.innerHTML = items.map(o=>{
-    const t = o.ts instanceof Date ? o.ts.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts?.toDate ? o.ts.toDate().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts ? new Date(o.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
+    const t = _horaExacta(o.ts);
     const esCobrada = o.estado==='cobrada' || o._histo;
     const esEspecial = o.estado==='cancel_solicitada'||o.estado==='revision_jefe';
     const statusLabel = _statusLabelOrden(o.estado);
@@ -5854,7 +5878,7 @@ function renderBarra(){
 }
 function ordenCardEntregadaHTML(o){return '';} // no longer used
 function ordenCardHTML(o,ctx){
-  const t=o.ts instanceof Date?o.ts.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}):'';
+  const t=_horaExacta(o.ts);
   return `<div class="orden-card ${o.estado}" onclick="abrirOrdenDetalle('${o.id}','${ctx}')">
     <div class="oc-header"><div><div class="oc-mesa">Mesa ${o.mesa}</div><div class="oc-meta">${o.mesero||'—'} · ${t}</div></div><div class="oc-status ${o.estado}">${o.estado==='pendiente'?'Pendiente':'Lista'}</div></div>
     <div class="oc-prods">${(o.items||[]).map(i=>`${i.qty}x ${i.nombre}${i.nota?' ('+i.nota+')':''}`).join(' · ')}</div>
@@ -6615,19 +6639,17 @@ function renderJefeOrdenes(){
 
   // Armar lista según filtros activos
   let items=[];
-  if(_filtrosJefe.pendiente) items.push(...ordenes.filter(o=>o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe'));
-  if(_filtrosJefe.lista)     items.push(...ordenes.filter(o=>o.estado==='lista'));
-  if(_filtrosJefe.cobrada)   items.push(...historial.filter(h=>!h.tipo||h.tipo==='venta').slice(0,20).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosJefe.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosJefe.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
+  if(_filtrosJefe.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   // Ordenar: primero cancelaciones solicitadas (urgente), luego pendientes, listas, cobradas
   const orden={cancel_solicitada:0,revision_jefe:1,pendiente:2,lista:3,cobrada:4};
-  items.sort((a,b)=>(orden[a.estado]||2)-(orden[b.estado]||2));
+  items.sort((a,b)=>((orden[a.estado]??2)-(orden[b.estado]??2)) || ((_tsADate(b.ts)||new Date())-(_tsADate(a.ts)||new Date())));
 
   empty.classList.toggle('hidden', items.length>0);
   el.innerHTML = items.map(o=>{
-    const t = o.ts instanceof Date ? o.ts.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts?.toDate ? o.ts.toDate().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})
-            : o.ts ? new Date(o.ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '';
+    const t = _horaExacta(o.ts);
     const esCobrada = o.estado==='cobrada' || o._histo;
     const esCancelSol = o.estado==='cancel_solicitada';
     const esRevision  = o.estado==='revision_jefe';
@@ -6887,9 +6909,12 @@ function renderHistorial(){
     return h.tipo===_histFiltroTipo;
   });
 
-  document.getElementById('hist-list').innerHTML=items.length?items.map(h=>{
+  _histItemsFiltrados=items;
+  _renderHistDias(items);
+}
+function _histRowHTML(h, soloHora){
     const d=h.ts instanceof Date?h.ts:new Date(h.ts);
-    const t=d.toLocaleString('es-MX');
+    const t=soloHora?_horaExacta(d):d.toLocaleString('es-MX');
     const tipo=h.tipo||'venta';
     if(tipo==='venta'){
       return `<div class="hist-item" onclick="abrirDetalleHistorial('${h.id}')">
@@ -6935,7 +6960,96 @@ function renderHistorial(){
       </div>`;
     }
     return '';
-  }).join(''):'<div class="cart-empty">No hay registros con estos filtros</div>';
+}
+
+
+// ── Historial agrupado por día ──
+let _histItemsFiltrados=[], _histDiaAbierto=null;
+function _diaClave(ts){ const d=_tsADate(ts); return d?_fechaISO(d):'sin-fecha'; }
+function _diaTitulo(clave){
+  if(clave==='sin-fecha') return 'Sin fecha';
+  const d=new Date(clave+'T12:00:00');
+  const hoy=_fechaISO(new Date()), ayer=new Date(); ayer.setDate(ayer.getDate()-1);
+  const base=d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const cap=base.charAt(0).toUpperCase()+base.slice(1);
+  if(clave===hoy) return 'Hoy · '+cap;
+  if(clave===_fechaISO(ayer)) return 'Ayer · '+cap;
+  return cap;
+}
+function _retirosDelDia(clave){
+  return (typeof retiros!=='undefined'?retiros:[]).filter(r=>_diaClave(r.ts)===clave);
+}
+function _resumenDia(lista, clave){
+  const ventas=lista.filter(h=>!h.tipo||h.tipo==='venta');
+  const sum=a=>a.reduce((s,h)=>s+(parseFloat(h.total)||0),0);
+  const movs=_retirosDelDia(clave);
+  return {
+    ventas:ventas.length, total:sum(ventas),
+    efectivo:sum(ventas.filter(h=>h.metodoPago!=='tarjeta'&&h.metodoPago!=='transferencia')),
+    tarjeta:sum(ventas.filter(h=>h.metodoPago==='tarjeta')),
+    transferencia:sum(ventas.filter(h=>h.metodoPago==='transferencia')),
+    gastos:sum(lista.filter(h=>h.tipo==='gasto')),
+    retiros:movs.filter(r=>r.tipo==='retiro').reduce((s,r)=>s+(parseFloat(r.monto)||0),0),
+    depositos:movs.filter(r=>r.tipo==='deposito').reduce((s,r)=>s+(parseFloat(r.monto)||0),0),
+    movimientos:lista.length+movs.length
+  };
+}
+function _renderHistDias(items){
+  const el=document.getElementById('hist-list'); if(!el) return;
+  const grupos={};
+  items.forEach(h=>{ const k=_diaClave(h.ts); (grupos[k]=grupos[k]||[]).push(h); });
+  // Días que solo tienen retiros/depósitos también aparecen (si el filtro es "Todos")
+  if(_histFiltroTipo==='todos'){
+    const desde=document.getElementById('hist-fecha-desde')?.value, hasta=document.getElementById('hist-fecha-hasta')?.value;
+    (typeof retiros!=='undefined'?retiros:[]).forEach(r=>{
+      const k=_diaClave(r.ts); if(k==='sin-fecha') return;
+      if((desde&&k<desde)||(hasta&&k>hasta)) return;
+      if(!grupos[k]) grupos[k]=[];
+    });
+  }
+  const claves=Object.keys(grupos).sort((a,b)=>a<b?1:-1);
+  if(!claves.length){ el.innerHTML='<div class="cart-empty">No hay registros con estos filtros</div>'; return; }
+  el.innerHTML='<p style="font-size:11px;color:var(--gy);margin:4px 0 10px">Toca dos veces un día para ver todos sus movimientos.</p>'+
+    claves.map(k=>{
+      const r=_resumenDia(grupos[k],k);
+      const extra=[r.gastos?`Gastos −$${r.gastos.toFixed(2)}`:'', r.retiros?`Retiros −$${r.retiros.toFixed(2)}`:'', r.depositos?`Depósitos +$${r.depositos.toFixed(2)}`:''].filter(Boolean).join(' · ');
+      return `<div class="hist-dia-card" onclick="_tocarDoble('dia_${k}',this,()=>abrirHistDia('${k}'))">
+        <div class="hist-dia-top">
+          <div class="hist-dia-tit">${_diaTitulo(k)}</div>
+          <div class="hist-dia-total">$${r.total.toFixed(2)}</div>
+        </div>
+        <div class="hist-dia-sub">${r.ventas} venta${r.ventas!==1?'s':''} · ${r.movimientos} movimiento${r.movimientos!==1?'s':''}</div>
+        ${extra?`<div class="hist-dia-sub">${extra}</div>`:''}
+      </div>`;
+    }).join('');
+  if(_histDiaAbierto && !document.getElementById('modal-hist-dia')?.classList.contains('hidden')) abrirHistDia(_histDiaAbierto, true);
+}
+function abrirHistDia(clave, soloRefrescar){
+  _histDiaAbierto=clave;
+  const lista=_histItemsFiltrados.filter(h=>_diaClave(h.ts)===clave);
+  const movs=_histFiltroTipo==='todos'?_retirosDelDia(clave):[];
+  const r=_resumenDia(lista,clave);
+  document.getElementById('hist-dia-titulo').textContent=_diaTitulo(clave);
+  document.getElementById('hist-dia-resumen').innerHTML=`
+    <div class="hist-dia-kpi"><span>Ventas (${r.ventas})</span><b>$${r.total.toFixed(2)}</b></div>
+    <div class="hist-dia-kpi"><span>💵 Efectivo</span><b>$${r.efectivo.toFixed(2)}</b></div>
+    <div class="hist-dia-kpi"><span>💳 Tarjeta</span><b>$${r.tarjeta.toFixed(2)}</b></div>
+    <div class="hist-dia-kpi"><span>🏦 Transferencia</span><b>$${r.transferencia.toFixed(2)}</b></div>
+    ${r.gastos?`<div class="hist-dia-kpi"><span>Gastos</span><b style="color:var(--rd)">−$${r.gastos.toFixed(2)}</b></div>`:''}
+    ${r.retiros?`<div class="hist-dia-kpi"><span>Retiros</span><b style="color:var(--rd)">−$${r.retiros.toFixed(2)}</b></div>`:''}
+    ${r.depositos?`<div class="hist-dia-kpi"><span>Depósitos</span><b style="color:var(--gn)">+$${r.depositos.toFixed(2)}</b></div>`:''}`;
+  // Movimientos del día en orden cronológico (del más reciente al más antiguo)
+  const filas=[
+    ...lista.map(h=>({d:_tsADate(h.ts), html:_histRowHTML(h,true)})),
+    ...movs.map(m=>({d:_tsADate(m.ts), html:`<div class="hist-item">
+        <div class="hi-hdr"><div class="hi-mesa">${m.tipo==='retiro'?'Retiro de caja':'Depósito a caja'}<span class="hi-type-badge" style="margin-left:6px;background:${m.tipo==='retiro'?'#FDEBEB;color:#C43A3A':'#E6F4EA;color:#2E7D46'}">${m.tipo==='retiro'?'Retiro':'Depósito'}</span></div><div class="hi-time">${_horaExacta(m.ts)}</div></div>
+        <div class="hi-prods">${m.concepto||'Sin concepto'}</div>
+        <div class="hi-total" style="color:${m.tipo==='retiro'?'var(--rd)':'var(--gn)'}">${m.tipo==='retiro'?'−':'+'}$${(parseFloat(m.monto)||0).toFixed(2)}</div>
+        <div class="hi-meta">Registró: ${m.registradoPor||'—'}</div>
+      </div>`}))
+  ].sort((a,b)=>(b.d||0)-(a.d||0));
+  document.getElementById('hist-dia-lista').innerHTML = filas.length ? filas.map(f=>f.html).join('') : '<div class="cart-empty">Sin movimientos este día</div>';
+  if(!soloRefrescar) openModal('modal-hist-dia');
 }
 
 function abrirDetalleHistorial(id){
