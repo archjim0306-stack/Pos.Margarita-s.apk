@@ -766,6 +766,36 @@ select{appearance:none;background-image:url("data:image/jpeg;base64,/9j/4AAQSkZJ
     white-space: nowrap;
   }
   #swipe-hint.hidden { display: none; }
+
+/* PERMISOS POR PESTAÑA */
+.perm-off{display:none!important}
+/* AVISOS / BUZÓN */
+.jnav-badge{margin-left:auto;background:var(--rd);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;min-width:18px;text-align:center}
+.hamburger-btn{position:relative}
+.hamb-dot{position:absolute;top:2px;right:0;width:9px;height:9px;border-radius:50%;background:var(--rd);border:2px solid var(--cr)}
+.aviso-row{display:flex;gap:10px;align-items:flex-start;background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--rs);padding:11px 12px;margin-bottom:6px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:background .15s}
+.aviso-row.unread{border-color:var(--or-l);background:var(--or-bg)}
+.aviso-row.tapped{background:var(--cr-d)}
+.aviso-dot{width:8px;height:8px;border-radius:50%;background:var(--or);margin-top:6px;flex-shrink:0}
+.aviso-row:not(.unread) .aviso-dot{background:transparent}
+.aviso-main{flex:1;min-width:0}
+.aviso-tit{font-size:13px;color:var(--br);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aviso-row.unread .aviso-tit{font-weight:700}
+.aviso-prev{font-size:11.5px;color:var(--gy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.aviso-meta{font-size:10.5px;color:var(--gy);white-space:nowrap;text-align:right;flex-shrink:0}
+.aviso-estado{font-size:10.5px;margin-top:4px;color:var(--gy)}
+.aviso-estado.ok{color:var(--gn);font-weight:700}
+.aviso-cuerpo{font-size:13px;line-height:1.6;color:var(--br);white-space:pre-wrap;word-break:break-word;background:var(--cr);border-radius:var(--rs);padding:12px;margin:10px 0}
+.aviso-hilo-msg{border-left:3px solid var(--or-l);padding:6px 10px;margin:8px 0;font-size:12.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:var(--br)}
+.aviso-hilo-msg.de-super{border-left-color:var(--br-l)}
+.aviso-hilo-meta{font-size:10.5px;color:var(--gy);margin-bottom:2px;white-space:normal}
+.aviso-ta{width:100%;border:1.5px solid var(--cr-d);border-radius:var(--rs);padding:9px;font-family:inherit;font-size:13px;resize:vertical;color:var(--br)}
+.aviso-ta:focus,.inp:focus{outline:2px solid var(--or-l);outline-offset:1px}
+.pass-val{font-size:14px;font-weight:700;letter-spacing:.08em;color:var(--br);min-width:70px;text-align:right}
+.pass-eye{background:var(--gy-l);border:none;border-radius:8px;padding:6px 9px;font-size:14px;cursor:pointer}
+.func-rol-card{background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.func-rol-hdr{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.func-rol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0 12px}
 </style>
 
   <!-- PWA / Acceso directo -->
@@ -781,7 +811,7 @@ select{appearance:none;background-image:url("data:image/jpeg;base64,/9j/4AAQSkZJ
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-         onSnapshot, query, orderBy, serverTimestamp, getDoc, getDocs, arrayUnion }
+         onSnapshot, query, orderBy, limit, serverTimestamp, getDoc, getDocs, arrayUnion }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ╔════════════════════════════════════════════════════╗
@@ -802,7 +832,7 @@ const fbApp = initializeApp(firebaseConfig);
 const db    = getFirestore(fbApp);
 window._db  = db;
 window._fb  = { collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
-                onSnapshot, query, orderBy, serverTimestamp, getDoc, getDocs, arrayUnion };
+                onSnapshot, query, orderBy, limit, serverTimestamp, getDoc, getDocs, arrayUnion };
 window._dbReady = true;
 window._dbReadyFired = true;
 document.dispatchEvent(new Event('db-ready'));
@@ -823,6 +853,12 @@ document.dispatchEvent(new Event('db-ready'));
       <div class="rl-sub-txt">Cafetería & Panadería</div>
     </div>
 
+    <!-- Aviso de app apagada (solo visible si el superusuario la apagó) -->
+    <div id="app-off-box" style="display:none;margin:18px auto 0;max-width:340px;background:rgba(255,255,255,.95);border-radius:16px;padding:22px 20px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)">
+      <div style="font-size:34px;margin-bottom:6px">🔒</div>
+      <div style="font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:#5C3318;margin-bottom:8px">Servicio suspendido</div>
+      <div id="app-off-msg" style="font-size:13px;color:#555;line-height:1.6"></div>
+    </div>
     <!-- Tarjetas de rol -->
     <div class="rl-cards">
       <div class="rl-card" onclick="iniciarMesero()">
@@ -1210,6 +1246,53 @@ document.dispatchEvent(new Event('db-ready'));
   </div>
 </div>
 
+<!-- MODAL LEER AVISO (jefe abre / superusuario consulta) -->
+<div id="modal-aviso" class="overlay hidden">
+  <div class="mbox">
+    <h3 id="av-m-titulo"></h3>
+    <div class="msub" id="av-m-fecha" style="margin-bottom:4px"></div>
+    <div class="aviso-estado" id="av-m-estado" style="text-align:center"></div>
+    <div class="aviso-cuerpo" id="av-m-cuerpo"></div>
+    <div id="av-m-hilo"></div>
+    <label class="inp-label" for="av-m-resp" id="av-m-resp-lbl">Responder</label>
+    <textarea id="av-m-resp" class="aviso-ta" rows="3" placeholder="Escribe tu respuesta"></textarea>
+    <div class="mrow" style="margin-top:10px">
+      <button class="btn btn-gy" onclick="closeModal('modal-aviso')">Cerrar</button>
+      <button class="btn btn-or" style="flex:2" id="av-m-enviar" onclick="enviarRespuestaAviso()">Enviar</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL LEER MENSAJE DEL BUZÓN (superusuario) -->
+<div id="modal-buzon" class="overlay hidden">
+  <div class="mbox">
+    <h3 id="bz-m-titulo"></h3>
+    <div class="msub" id="bz-m-fecha" style="margin-bottom:4px"></div>
+    <div class="aviso-estado" id="bz-m-ref" style="text-align:center"></div>
+    <div class="aviso-cuerpo" id="bz-m-cuerpo"></div>
+    <label class="inp-label" for="bz-m-resp">Responder al jefe</label>
+    <textarea id="bz-m-resp" class="aviso-ta" rows="3" placeholder="Tu respuesta llegará al jefe como un aviso nuevo"></textarea>
+    <div class="mrow" style="margin-top:10px">
+      <button class="btn btn-gy" onclick="closeModal('modal-buzon')">Cerrar</button>
+      <button class="btn btn-or" style="flex:2" onclick="responderBuzon()">Enviar</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL MENSAJE NUEVO DEL JEFE AL SUPERUSUARIO -->
+<div id="modal-buzon-nuevo" class="overlay hidden">
+  <div class="mbox">
+    <h3>Escribir al superusuario</h3>
+    <p class="msub">Tu mensaje llega al buzón del superusuario.</p>
+    <label class="inp-label" for="bzn-titulo">Título</label>
+    <input type="text" id="bzn-titulo" class="inp" maxlength="120" placeholder="Ej: Duda sobre el corte">
+    <label class="inp-label" for="bzn-msg">Mensaje</label>
+    <textarea id="bzn-msg" class="aviso-ta" rows="5" placeholder="Escribe tu comentario"></textarea>
+    <div class="mrow" style="margin-top:10px">
+      <button class="btn btn-gy" onclick="closeModal('modal-buzon-nuevo')">Cancelar</button>
+      <button class="btn btn-or" style="flex:2" onclick="enviarMensajeNuevoJefe()">Enviar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL OPCIONES COBRO -->
 <div id="modal-opciones-cobro" class="overlay hidden">
   <div class="mbox">
@@ -1564,6 +1647,7 @@ document.dispatchEvent(new Event('db-ready'));
   <div class="jefe-topbar hidden" id="tabs-jefe">
     <button class="hamburger-btn" id="hamburger-btn" onclick="toggleJefeMenu()" aria-label="Menú">
       <span></span><span></span><span></span>
+      <i class="hamb-dot hidden" id="hamb-dot"></i>
     </button>
     <div class="jefe-title-bar">
       <span id="jefe-current-tab-label">Órdenes</span>
@@ -1587,9 +1671,12 @@ document.dispatchEvent(new Event('db-ready'));
       <button class="jnav-item" data-view="jdispositivos" onclick="jefeNavTo(this,'jdispositivos','Accesos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="3" stroke-linecap="round"/></svg> Accesos</button>
       <button class="jnav-item" data-view="cortes" onclick="jefeNavTo(this,'cortes','Cortes')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h6M7 3h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 012-2z"/><path d="M9 11h6M9 15h4"/></svg> Cortes</button>
       <button class="jnav-item" data-view="jbalance" onclick="jefeNavTo(this,'jbalance','Balance')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Balance</button>
+      <button class="jnav-item" id="jnav-avisos-btn" data-view="javisos" onclick="jefeNavTo(this,'javisos','Avisos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> Avisos <span class="jnav-badge hidden" id="bdg-avisos"></span></button>
       <button class="jnav-item hidden" id="jnav-super-btn" data-view="jsuper" onclick="jefeNavTo(this,'jsuper','Superusuario')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6l4 3 6-7 6 7 4-3-2 12H4L2 6z"/><path d="M4 21h16" stroke-linecap="round"/></svg> Superusuario</button>
       <button class="jnav-item hidden" id="jnav-control-btn" data-view="jcontrol" onclick="jefeNavTo(this,'jcontrol','Control')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Control</button>
       <button class="jnav-item hidden" id="jnav-funciones-btn" data-view="jfunciones" onclick="jefeNavTo(this,'jfunciones','Funciones')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Funciones</button>
+      <button class="jnav-item hidden" id="jnav-buzon-btn" data-view="jbuzon" onclick="jefeNavTo(this,'jbuzon','Buzón')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg> Buzón <span class="jnav-badge hidden" id="bdg-buzon"></span></button>
+      <button class="jnav-item hidden" id="jnav-emitir-btn" data-view="jemitir" onclick="jefeNavTo(this,'jemitir','Avisos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Avisos</button>
       <button class="jnav-item" data-view="jconfig" onclick="jefeNavTo(this,'jconfig','Configuración')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Configuración</button>
       <button class="jnav-item" data-view="jfuente" onclick="jefeNavTo(this,'jfuente','Fuente')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V6M4 6h8M4 6c0-1.5 2-1.5 2-1.5M12 6v14M12 6c0-1.5-2-1.5-2-1.5"/><path d="M16 20l2-8 2 8M16.8 18h2.4" stroke-linejoin="round"/></svg> Fuente</button>
     </nav>
@@ -2026,6 +2113,17 @@ document.dispatchEvent(new Event('db-ready'));
         <div style="font-size:12px;opacity:.9;margin-top:4px">Tienes control total de la aplicación: accesos, dispositivos, historial completo y cambios de cada perfil.</div>
       </div>
       <div style="background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:14px;margin-bottom:14px">
+        <div class="sec-title" style="margin:0 0 4px">🔌 Estado de la app</div>
+        <p style="font-size:11px;color:var(--gy);margin:0 0 10px;line-height:1.5">Si la apagas, nadie (jefe, mesero ni barra) puede entrar ni seguir usándola: a quien esté dentro se le cierra la sesión al instante y verán tu mensaje. Tú sigues entrando con la contraseña del logo.</p>
+        <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:var(--br);margin-bottom:10px;cursor:pointer">
+          <input type="checkbox" id="app-estado-chk" checked style="width:22px;height:22px;accent-color:var(--or)">
+          <span id="app-estado-lbl">App activa</span>
+        </label>
+        <label class="inp-label">Mensaje para los usuarios cuando esté apagada</label>
+        <textarea id="app-estado-msg" rows="3" style="width:100%;border:1.5px solid var(--cr-d);border-radius:var(--rs);padding:8px;margin-bottom:10px;font-family:inherit" placeholder="Ej: Servicio suspendido por falta de pago. Contacta a tu proveedor."></textarea>
+        <button class="btn btn-or btn-full" onclick="guardarEstadoApp()">Guardar estado</button>
+      </div>
+      <div style="background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:14px;margin-bottom:14px">
         <div class="sec-title" style="margin:0 0 4px">👁️ Ver como</div>
         <p style="font-size:11px;color:var(--gy);margin:0 0 10px">Previsualiza la app exactamente como la ve cada perfil. Puedes volver a Superusuario en cualquier momento.</p>
         <div style="display:flex;gap:8px">
@@ -2071,6 +2169,15 @@ document.dispatchEvent(new Event('db-ready'));
     <!-- VISTA CONTROL — bitácora exhaustiva de operaciones, exclusiva del superusuario -->
     <div class="view hidden" id="view-jcontrol">
       <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;margin:0 0 4px">
+        <span>🔑 Contraseñas</span>
+        <button class="btn btn-gy btn-sm" id="pass-toggle-all" onclick="_toggleTodasContrasenas()">Mostrar todas</button>
+      </div>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 10px;line-height:1.6">Contraseñas y PINs actuales de cada perfil. Toca el ojo para verla. Cada consulta queda en la bitácora.</p>
+      <div id="control-pass-list" style="margin-bottom:18px"></div>
+      <div class="sec-title" style="margin:0 0 4px">👔 Accesos del jefe</div>
+      <div id="control-jefe-ultimo" style="background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;font-size:13px;color:var(--br)"></div>
+      <div id="control-jefe-lista" style="margin-bottom:18px"></div>
+      <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center;margin:0 0 4px">
         <span>Usuarios</span>
         <button class="btn btn-gy btn-sm" onclick="_cargarTodoControl()">↻ Actualizar</button>
       </div>
@@ -2085,8 +2192,47 @@ document.dispatchEvent(new Event('db-ready'));
     <!-- VISTA FUNCIONES — exclusiva del superusuario: activar/desactivar funciones por perfil -->
     <div class="view hidden" id="view-jfunciones">
       <div class="sec-title" style="margin:0 0 10px">Funciones</div>
-      <p style="font-size:11px;color:var(--gy);margin:0 0 14px;line-height:1.6">Activa o desactiva funciones específicas para cada perfil, sin necesidad de subir un archivo nuevo. Los cambios se aplican al instante en todos los dispositivos.</p>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 14px;line-height:1.6">Quita o devuelve pestañas completas y acciones específicas a cada perfil (jefe, mesero y barra). Los cambios se aplican al instante en todos los dispositivos. Tú, como superusuario, siempre conservas todo.</p>
       <div id="funciones-tabla"></div>
+    </div>
+    <!-- VISTA AVISOS (JEFE) — bandeja de avisos del superusuario -->
+    <div class="view hidden" id="view-javisos">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="sec-title" style="margin:0;border:none">Avisos</div>
+        <button class="btn btn-or btn-sm" onclick="abrirMensajeNuevoJefe()">✉️ Escribir al superusuario</button>
+      </div>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 12px;line-height:1.6">Toca dos veces un aviso para abrirlo y responder.</p>
+      <div id="avisos-jefe-list"></div>
+      <div class="cart-empty hidden" id="avisos-jefe-empty">No tienes avisos por ahora</div>
+    </div>
+    <!-- VISTA BUZÓN (SUPERUSUARIO) — comentarios y respuestas del jefe -->
+    <div class="view hidden" id="view-jbuzon">
+      <div class="sec-title" style="margin:0 0 4px">Buzón</div>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 12px;line-height:1.6">Aquí llegan todos los comentarios y respuestas del jefe. Toca dos veces un mensaje para abrirlo.</p>
+      <div id="buzon-super-list"></div>
+      <div class="cart-empty hidden" id="buzon-super-empty">El jefe aún no ha enviado mensajes</div>
+    </div>
+    <!-- VISTA AVISOS (SUPERUSUARIO) — emitir avisos al jefe -->
+    <div class="view hidden" id="view-jemitir">
+      <div class="sec-title" style="margin:0 0 8px">Enviar aviso al jefe</div>
+      <div style="background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:14px;margin-bottom:16px">
+        <label class="inp-label" for="emitir-titulo">Título del aviso</label>
+        <input type="text" id="emitir-titulo" class="inp" maxlength="120" placeholder="Ej: Mantenimiento programado">
+        <label class="inp-label" for="emitir-msg">Mensaje</label>
+        <textarea id="emitir-msg" class="aviso-ta" rows="6" placeholder="Escribe aquí la descripción del aviso"></textarea>
+        <button class="btn btn-or btn-full" id="emitir-btn" style="margin-top:10px" onclick="emitirAviso()">Enviar aviso</button>
+      </div>
+      <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Avisos enviados</span>
+        <span id="emitir-count" style="font-size:11px;color:var(--gy);font-weight:600"></span>
+      </div>
+      <p style="font-size:11px;color:var(--gy);margin:-2px 0 10px;line-height:1.6">Cada aviso muestra la fecha y hora en que el jefe lo leyó. Toca dos veces para ver el detalle y sus respuestas.</p>
+      <div id="emitir-list"></div>
+      <div class="cart-empty hidden" id="emitir-empty">Aún no has enviado avisos</div>
+    </div>
+    <!-- VISTA SIN ACCESO — cuando el superusuario deshabilitó todas las pestañas del perfil -->
+    <div class="view hidden" id="view-sinacceso">
+      <div class="cart-empty" style="padding:40px 16px;line-height:1.6">No hay secciones habilitadas para este perfil.<br>Comunícate con el administrador.</div>
     </div>
     <div class="view hidden" id="view-jconfig">
 
@@ -3070,6 +3216,7 @@ async function _loginExitoso(){
   closeModal('modal-pass');
   entrarApp();
   _registrarAcceso(NOMBRE,'jefe');
+  _registrarAuditoria('Acceso del jefe','Inició sesión');
   // Actualizar nombre desde Firebase en background si hay conexión
   if(window._dbReady){
     try {
@@ -3110,6 +3257,7 @@ function salirVerComo(){
 }
 
 async function entrarApp(){
+  if(!APP_ACTIVA && !_esSuperEfectivo()){ salir(); _aplicarEstadoApp(); return; }
   document.getElementById('scr-role').style.display='none';
   document.getElementById('app').style.display='flex';
   document.getElementById('tb-info').innerHTML = ROL==='mesero'?`<b>${NOMBRE}</b>`:ROL==='barra'?` <b>Barra</b>`:` <b>${NOMBRE||'Jefe'}</b>`;
@@ -3126,6 +3274,9 @@ async function entrarApp(){
   document.getElementById('jnav-super-btn')?.classList.toggle('hidden', !ES_SUPER);
   document.getElementById('jnav-control-btn')?.classList.toggle('hidden', !ES_SUPER);
   document.getElementById('jnav-funciones-btn')?.classList.toggle('hidden', !ES_SUPER);
+  document.getElementById('jnav-buzon-btn')?.classList.toggle('hidden', !ES_SUPER);
+  document.getElementById('jnav-emitir-btn')?.classList.toggle('hidden', !ES_SUPER);
+  document.getElementById('jnav-avisos-btn')?.classList.toggle('hidden', ES_SUPER);
   document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.classList.add('hidden')});
   const init = ES_SUPER?'jsuper':ROL==='mesero'?'menu':ROL==='barra'?'bpend':'jordenes';
   activarView(init);
@@ -3135,8 +3286,11 @@ async function entrarApp(){
     const lbl=document.getElementById('jefe-current-tab-label'); if(lbl) lbl.textContent='Superusuario';
     renderSuperPanel();
     renderEliminados();
+    _refrescarEstadoAppUI();
   }
   if(ROL==='mesero') document.getElementById('cart-fab').classList.remove('hidden');
+  _aplicarPestanasPermitidas();
+  _actualizarBadgesAvisos();
   buildNumpad('mesa-np','mesa');
   buildNumpad('cobro-np','cobro');
   buildNumpad('retiro-np','retiro');
@@ -3224,6 +3378,11 @@ async function entrarApp(){
   _tryIniciarListeners();
 }
 function activarView(n){
+  if(!_tabPermitida(n)){
+    const alt=_primeraTabPermitida();
+    if(alt){ _irATab(alt); return; }
+    n='sinacceso';
+  }
   document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.classList.add('hidden')});
   const el=document.getElementById('view-'+n); if(el){el.classList.remove('hidden');el.classList.add('active');}
   if(n==='jcaja'||n==='mcaja'||n==='bcaja') _refrescarCajaManual();
@@ -3362,6 +3521,65 @@ function _cuandoDbListo(fn){
 }
 
 // ══════════════════════════════════════════
+//  INTERRUPTOR GENERAL DE LA APP (solo el superusuario) — config/app_estado
+//  Apagada: bloquea el acceso de jefe/mesero/barra y cierra sesiones activas al instante.
+// ══════════════════════════════════════════
+let APP_ACTIVA = localStorage.getItem('mg_app_activa')!=='0';
+let APP_MENSAJE = localStorage.getItem('mg_app_mensaje')||'';
+function _esSuperEfectivo(){ return ES_SUPER || (typeof _verComoBackup!=='undefined' && !!_verComoBackup); }
+function _aplicarEstadoApp(){
+  const bloqueada = !APP_ACTIVA && !_esSuperEfectivo();
+  const cards=document.querySelector('#scr-role .rl-cards');
+  const box=document.getElementById('app-off-box');
+  if(cards) cards.style.display = bloqueada?'none':'';
+  if(box){
+    box.style.display = (!APP_ACTIVA && !ROL)?'block':'none';
+    const m=document.getElementById('app-off-msg');
+    if(m) m.textContent = APP_MENSAJE || 'La aplicación no está disponible por el momento. Contacta a tu proveedor.';
+  }
+  if(bloqueada && ROL){ salir(); }
+}
+function _iniciarVigilanciaEstadoApp(){
+  _aplicarEstadoApp(); // aplica el último estado conocido al instante
+  _cuandoDbListo(()=>{
+    const {doc,onSnapshot}=window._fb;
+    onSnapshot(doc(window._db,'config','app_estado'), snap=>{
+      if(snap.exists()){
+        const d=snap.data();
+        APP_ACTIVA = d.activa!==false;
+        APP_MENSAJE = d.mensaje||'';
+      } else { APP_ACTIVA=true; APP_MENSAJE=''; }
+      localStorage.setItem('mg_app_activa', APP_ACTIVA?'1':'0');
+      localStorage.setItem('mg_app_mensaje', APP_MENSAJE);
+      _aplicarEstadoApp();
+      _refrescarEstadoAppUI();
+    }, err=>console.error('config/app_estado:',err)); // si falla la lectura NO se bloquea a nadie
+  });
+}
+function _refrescarEstadoAppUI(){
+  const chk=document.getElementById('app-estado-chk'); if(!chk) return;
+  chk.checked=APP_ACTIVA;
+  const l=document.getElementById('app-estado-lbl'); if(l) l.textContent = APP_ACTIVA?'App activa':'App APAGADA';
+  const m=document.getElementById('app-estado-msg'); if(m && document.activeElement!==m) m.value=APP_MENSAJE;
+}
+async function guardarEstadoApp(){
+  if(!ES_SUPER){ mostrarNotif('⛔ Solo el superusuario','warn'); return; }
+  const activa=document.getElementById('app-estado-chk').checked;
+  const mensaje=(document.getElementById('app-estado-msg').value||'').trim();
+  try{
+    const {doc,setDoc,serverTimestamp}=window._fb;
+    await setDoc(doc(window._db,'config','app_estado'),{activa,mensaje,actualizadoPor:NOMBRE||'Superusuario',ts:serverTimestamp()});
+    APP_ACTIVA=activa; APP_MENSAJE=mensaje;
+    localStorage.setItem('mg_app_activa', activa?'1':'0'); localStorage.setItem('mg_app_mensaje', mensaje);
+    _refrescarEstadoAppUI();
+    _registrarAuditoria('Estado de la app', activa?'App ACTIVADA':'App APAGADA'+(mensaje?' · '+mensaje:''));
+    mostrarNotif(activa?'✅ App activada para todos':'🔒 App apagada: solo tú puedes entrar');
+  }catch(e){ console.error(e); mostrarNotif('⚠️ No se pudo guardar, revisa tu conexión','warn'); }
+}
+_iniciarVigilanciaEstadoApp();
+
+
+// ══════════════════════════════════════════
 //  CARGA DIRECTA (getDocs) — respaldo por si el listener en vivo no llegó a tiempo.
 //  Se usa al entrar a cada pestaña y al presionar "Actualizar".
 // ══════════════════════════════════════════
@@ -3450,7 +3668,7 @@ const FUNCIONES_TOGGLEABLES = [
   {key:'eliminar_orden',    label:'Eliminar orden directamente', icono:'⛔'},
 ];
 // Valores por defecto = el comportamiento actual de la app (nada se restringe hasta que el superusuario lo decida)
-let PERMISOS = { jefe:{}, mesero:{}, barra:{} };
+let PERMISOS = (()=>{ try{ const c=JSON.parse(localStorage.getItem('mg_permisos')||'null'); if(c&&typeof c==='object') return {jefe:c.jefe||{},mesero:c.mesero||{},barra:c.barra||{}}; }catch(_){} return { jefe:{}, mesero:{}, barra:{} }; })();
 function tienePermiso(funcion){
   if(ES_SUPER) return true; // el superusuario nunca se autobloquea
   const rolKey = ROL==='jefe'?'jefe':ROL==='barra'?'barra':'mesero';
@@ -3459,10 +3677,93 @@ function tienePermiso(funcion){
   return p[funcion]!==false;
 }
 function _avisoSinPermiso(){ mostrarNotif('⛔ Esta función fue deshabilitada por el superusuario','warn'); }
+// Pestañas completas que el superusuario puede quitar a cada perfil (clave en PERMISOS[rol]['tab_'+view])
+const PESTANAS_POR_ROL = {
+  jefe:[
+    {view:'jordenes',label:'Órdenes'},{view:'jmenu',label:'Vender'},{view:'jcobrar',label:'Cobrar'},
+    {view:'jcaja',label:'Caja'},{view:'jhistorial',label:'Historial'},{view:'jcarta',label:'Productos'},
+    {view:'jdispositivos',label:'Accesos'},{view:'cortes',label:'Cortes'},{view:'jbalance',label:'Balance'},
+    {view:'javisos',label:'Avisos'},{view:'jconfig',label:'Configuración'},{view:'jfuente',label:'Fuente'}
+  ],
+  mesero:[
+    {view:'menu',label:'Menú'},{view:'mordenes',label:'Órdenes'},{view:'caja',label:'Cobrar'},
+    {view:'mcaja',label:'Caja'},{view:'mfuente',label:'Fuente'},{view:'cortes',label:'Cortes'}
+  ],
+  barra:[
+    {view:'bpend',label:'Pendientes'},{view:'blistas',label:'Listas'},{view:'bcaja',label:'Caja'},
+    {view:'bfuente',label:'Fuente'},{view:'cortes',label:'Cortes'}
+  ]
+};
+function _rolKeyActual(){ return ROL==='jefe'?'jefe':ROL==='barra'?'barra':'mesero'; }
+function _tabPermitida(view){
+  if(ES_SUPER) return true;
+  const rk=_rolKeyActual();
+  if(!(PESTANAS_POR_ROL[rk]||[]).some(t=>t.view===view)) return true; // vistas que no son pestañas del perfil
+  return PERMISOS[rk]?.['tab_'+view]!==false;
+}
+function _primeraTabPermitida(){
+  const t=(PESTANAS_POR_ROL[_rolKeyActual()]||[]).find(t=>_tabPermitida(t.view));
+  return t?t.view:null;
+}
+function _irATab(view){
+  const rk=_rolKeyActual();
+  const label=(PESTANAS_POR_ROL[rk]||[]).find(t=>t.view===view)?.label||'';
+  if(ROL==='jefe'){
+    const b=document.querySelector(`#jefe-menu-drawer .jnav-item[data-view="${view}"]`);
+    if(b){ jefeNavTo(b,view,label); return; }
+  } else {
+    const b=document.querySelector(`#tabs-${rk} .tab-btn[data-view="${view}"]`);
+    if(b){ switchTab(b,view); return; }
+  }
+  activarView(view);
+}
+// Oculta los botones de las pestañas deshabilitadas y saca al usuario de una vista que ya no tiene permitida
+function _aplicarPestanasPermitidas(){
+  document.querySelectorAll('.perm-off').forEach(el=>el.classList.remove('perm-off'));
+  if(!ROL) return;
+  if(!ES_SUPER){
+    const rk=_rolKeyActual();
+    (PESTANAS_POR_ROL[rk]||[]).forEach(t=>{
+      if(_tabPermitida(t.view)) return;
+      const sel = rk==='jefe'
+        ? `#jefe-menu-drawer .jnav-item[data-view="${t.view}"]`
+        : `#tabs-${rk} .tab-btn[data-view="${t.view}"], #swipe-dots-${rk} [data-sdot="${t.view}"]`;
+      document.querySelectorAll(sel).forEach(el=>el.classList.add('perm-off'));
+    });
+  }
+  const actual=document.querySelector('.view.active')?.id?.replace('view-','');
+  if(!actual) return;
+  if(actual==='sinacceso'){ const alt=_primeraTabPermitida(); if(alt) _irATab(alt); return; }
+  if(!_tabPermitida(actual)){ mostrarNotif('⛔ Esta sección fue deshabilitada por el superusuario','warn'); activarView(actual); }
+}
 function renderFunciones(){
   const el=document.getElementById('funciones-tabla');
   if(!el) return;
-  el.innerHTML = FUNCIONES_TOGGLEABLES.map(f=>{
+  const roles=[['jefe','👔 Jefe'],['mesero','🧑‍🍳 Mesero'],['barra','🍹 Barra']];
+  let html='<div class="sec-title" style="margin:0 0 8px">Pestañas por perfil</div>';
+  html+=roles.map(([rol,titulo])=>{
+    const tabs=PESTANAS_POR_ROL[rol];
+    const activas=tabs.filter(t=>PERMISOS[rol]?.['tab_'+t.view]!==false).length;
+    const checks=tabs.map(t=>{
+      const activo=PERMISOS[rol]?.['tab_'+t.view]!==false;
+      return `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer">
+        <input type="checkbox" ${activo?'checked':''} style="width:18px;height:18px;accent-color:var(--or)" onchange="togglePermiso('${rol}','tab_${t.view}',this.checked)">
+        <span style="font-size:12.5px;color:var(--br)">${t.label}</span>
+      </label>`;
+    }).join('');
+    return `<div class="func-rol-card">
+      <div class="func-rol-hdr">
+        <div style="font-size:13px;font-weight:700;color:var(--br)">${titulo} <span style="font-weight:400;color:var(--gy);font-size:11px">${activas} de ${tabs.length} activas</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-gy btn-sm" style="margin:0" onclick="togglePestanasRol('${rol}',true)">Todas</button>
+          <button class="btn btn-gy btn-sm" style="margin:0" onclick="togglePestanasRol('${rol}',false)">Ninguna</button>
+        </div>
+      </div>
+      <div class="func-rol-grid">${checks}</div>
+    </div>`;
+  }).join('');
+  html+='<div class="sec-title" style="margin:16px 0 8px">Acciones</div>';
+  html+=FUNCIONES_TOGGLEABLES.map(f=>{
     const rows = ['jefe','mesero','barra'].map(rol=>{
       const activo = PERMISOS[rol]?.[f.key] !== false;
       const etiqueta = rol==='jefe'?'Jefe':rol==='mesero'?'Mesero':'Barra';
@@ -3476,6 +3777,28 @@ function renderFunciones(){
       <div style="display:flex;gap:18px;flex-wrap:wrap">${rows}</div>
     </div>`;
   }).join('');
+  el.innerHTML=html;
+}
+function _etiquetaPermiso(funcion){
+  if(funcion.startsWith('tab_')){
+    const v=funcion.slice(4);
+    for(const rol in PESTANAS_POR_ROL){ const t=PESTANAS_POR_ROL[rol].find(x=>x.view===v); if(t) return 'Pestaña '+t.label; }
+  }
+  return FUNCIONES_TOGGLEABLES.find(f=>f.key===funcion)?.label||funcion;
+}
+async function togglePestanasRol(rol, activo){
+  if(!ES_SUPER){ mostrarNotif('⛔ Solo el superusuario puede cambiar esto','warn'); return; }
+  if(!PERMISOS[rol]) PERMISOS[rol]={};
+  PESTANAS_POR_ROL[rol].forEach(t=>{ PERMISOS[rol]['tab_'+t.view]=activo; });
+  renderFunciones();
+  if(window._dbReady){
+    const {doc,setDoc}=window._fb;
+    try{ await setDoc(doc(window._db,'config','permisos'), PERMISOS, {merge:true}); }
+    catch(e){ console.error('togglePestanasRol:',e); mostrarNotif('⚠️ No se pudo guardar el cambio','warn'); return; }
+  }
+  const nom=rol==='jefe'?'Jefe':rol==='mesero'?'Mesero':'Barra';
+  mostrarNotif(activo?`✅ Todas las pestañas activadas (${nom})`:`🚫 Todas las pestañas desactivadas (${nom})`);
+  _registrarAuditoria('Cambio de permisos', `Todas las pestañas → ${rol}: ${activo?'activadas':'desactivadas'} · Por: ${NOMBRE||'Superusuario'}`);
 }
 async function togglePermiso(rol, funcion, activo){
   if(!PERMISOS[rol]) PERMISOS[rol]={};
@@ -3486,12 +3809,349 @@ async function togglePermiso(rol, funcion, activo){
       await setDoc(doc(window._db,'config','permisos'), PERMISOS, {merge:true});
     }catch(e){ console.error('togglePermiso:',e); mostrarNotif('⚠️ No se pudo guardar el cambio','warn'); }
   }
-  mostrarNotif(`${activo?'✅ Activado':'🚫 Desactivado'}: ${FUNCIONES_TOGGLEABLES.find(f=>f.key===funcion)?.label||funcion} (${rol})`);
+  if(ES_SUPER) renderFunciones();
+  mostrarNotif(`${activo?'✅ Activado':'🚫 Desactivado'}: ${_etiquetaPermiso(funcion)} (${rol})`);
   _registrarAuditoria('Cambio de permisos', `${funcion} → ${rol}: ${activo?'activado':'desactivado'} · Por: ${NOMBRE||'Superusuario'}`);
 }
 
+// ══════════════════════════════════════════
+//  CONTRASEÑAS — el superusuario consulta la contraseña/PIN vigente de cada perfil
+// ══════════════════════════════════════════
+let _passJefe=null, _passSuper=null, _passVisibles=new Set(), _passTodas=false;
+async function _cargarContrasenas(){
+  if(!ES_SUPER) return;
+  _passSuper = localStorage.getItem('mg_pass_super') || SUPER_PASS;
+  if(_passJefe===null) _passJefe = localStorage.getItem('mg_pass_jefe') || PASS_DEFAULT;
+  renderContrasenas();
+  if(!window._dbReady) return;
+  try{
+    const {doc,getDoc}=window._fb;
+    const [cj,cs]=await Promise.all([getDoc(doc(window._db,'config','jefe')), getDoc(doc(window._db,'config','super'))]);
+    _passJefe = (cj.exists() && cj.data().password) ? cj.data().password : PASS_DEFAULT;
+    if(cs.exists() && cs.data().password) _passSuper = cs.data().password;
+  }catch(e){ console.error('_cargarContrasenas:',e); }
+  renderContrasenas();
+}
+function renderContrasenas(){
+  const el=document.getElementById('control-pass-list');
+  if(!el || !ES_SUPER) return;
+  const filas=[
+    {k:'super', nombre:'Superusuario', rol:'👑 Superusuario', pass:_passSuper},
+    {k:'jefe',  nombre:localStorage.getItem('mg_nombre_jefe')||'Jefe', rol:'👔 Jefe', pass:_passJefe},
+    ...(usuariosApp||[]).filter(u=>u.rol!=='jefe').sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'')).map(u=>({
+      k:'u_'+u.id, nombre:u.nombre||'Sin nombre', rol:(u.rol==='barra'?'Barra':'Mesero')+(u.debeCambiarPin?' · PIN temporal':''), pass:u.pin
+    }))
+  ];
+  el.innerHTML = filas.map(f=>{
+    const ver = _passTodas || _passVisibles.has(f.k);
+    const val = f.pass==null ? '—' : (ver ? _avEsc(String(f.pass)) : '••••••');
+    return `<div class="device-card" style="padding:10px 13px">
+      <div style="min-width:0"><div class="dc-name">${_avEsc(f.nombre)}</div><div style="font-size:11px;color:var(--gy)">${f.rol}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="pass-val">${val}</span>
+        <button class="pass-eye" aria-label="${ver?'Ocultar':'Mostrar'} contraseña de ${_avEsc(f.nombre)}" onclick="_togglePass('${f.k}')">${ver?'🙈':'👁️'}</button>
+      </div>
+    </div>`;
+  }).join('') + '<div style="font-size:11px;color:var(--gy);margin-top:4px">Barra entra sin contraseña.</div>';
+  const b=document.getElementById('pass-toggle-all'); if(b) b.textContent=_passTodas?'Ocultar todas':'Mostrar todas';
+}
+function _togglePass(k){
+  if(!ES_SUPER) return;
+  if(_passVisibles.has(k)) _passVisibles.delete(k);
+  else {
+    _passVisibles.add(k);
+    const nom = k==='super'?'Superusuario':k==='jefe'?'Jefe':((usuariosApp||[]).find(u=>'u_'+u.id===k)?.nombre||k);
+    _registrarAuditoria('Consulta de contraseña', `Perfil: ${nom}`);
+  }
+  renderContrasenas();
+}
+function _toggleTodasContrasenas(){
+  if(!ES_SUPER) return;
+  _passTodas=!_passTodas;
+  if(!_passTodas) _passVisibles.clear();
+  else _registrarAuditoria('Consulta de contraseña', 'Todas las contraseñas');
+  renderContrasenas();
+}
+
+// ══════════════════════════════════════════
+//  AVISOS (superusuario → jefe) Y BUZÓN (jefe → superusuario)
+//  Colecciones: avisos {titulo,mensaje,ts,leido,leidoTs,leidoPor,refBuzonId}
+//               buzon  {titulo,mensaje,avisoId,avisoTitulo,de,ts,leido,leidoTs}
+// ══════════════════════════════════════════
+let avisosLista=[], buzonLista=[];
+let _avisoAbiertoId=null, _buzonAbiertoId=null;
+const _idsVistos={avisos:null, buzon:null};
+let _dobleToque={id:null,t:0};
+function _avEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _avFecha(ts){
+  const d=_tsADate(ts); if(!d) return 'Enviando…';
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'})+' a las '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' hrs';
+}
+function _avFechaCorta(ts){
+  const d=_tsADate(ts); if(!d) return '…';
+  const hora=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  return _claveDia(d)===_claveDia(new Date()) ? hora : d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+}
+function _sinRe(t){ return String(t||'').replace(/^(re:\s*)+/i,''); }
+// Avisa con sonido + notificación solo de documentos que no se habían visto en esta sesión
+function _notificarNuevos(clave, lista, condicion, texto){
+  if(_idsVistos[clave]===null){ _idsVistos[clave]=new Set(lista.map(x=>x.id)); return; }
+  lista.forEach(x=>{
+    if(_idsVistos[clave].has(x.id)) return;
+    _idsVistos[clave].add(x.id);
+    if(condicion(x)){
+      try{ sonarCampana(); }catch(_){}
+      if(navigator.vibrate) navigator.vibrate([150,60,150]);
+      mostrarNotif(texto(x));
+    }
+  });
+}
+function _tocarDoble(id, el, fn){
+  const ahora=Date.now();
+  if(_dobleToque.id===id && ahora-_dobleToque.t<450){ _dobleToque={id:null,t:0}; fn(id); return; }
+  _dobleToque={id,t:ahora};
+  if(el){ el.classList.add('tapped'); setTimeout(()=>el.classList.remove('tapped'),450); }
+}
+function _actualizarBadgesAvisos(){
+  const sinLeerJefe = (ROL==='jefe' && !ES_SUPER) ? avisosLista.filter(a=>!a.leido).length : 0;
+  const sinLeerSuper = ES_SUPER ? buzonLista.filter(b=>!b.leido).length : 0;
+  const ba=document.getElementById('bdg-avisos'), bb=document.getElementById('bdg-buzon'), dot=document.getElementById('hamb-dot');
+  if(ba){ ba.textContent=sinLeerJefe; ba.classList.toggle('hidden', !sinLeerJefe); }
+  if(bb){ bb.textContent=sinLeerSuper; bb.classList.toggle('hidden', !sinLeerSuper); }
+  const avisosPermitidos = ES_SUPER || _tabPermitida('javisos');
+  if(dot) dot.classList.toggle('hidden', !((sinLeerJefe && avisosPermitidos) || sinLeerSuper));
+}
+
+// ── Bandeja del jefe ──
+function renderAvisosJefe(){
+  const el=document.getElementById('avisos-jefe-list'), empty=document.getElementById('avisos-jefe-empty');
+  if(!el) return;
+  empty?.classList.toggle('hidden', avisosLista.length>0);
+  el.innerHTML = avisosLista.map(a=>{
+    const resp = buzonLista.filter(b=>b.avisoId===a.id).length;
+    return `<div class="aviso-row${a.leido?'':' unread'}" onclick="_tocarDoble('${a.id}',this,abrirAviso)">
+      <span class="aviso-dot"></span>
+      <div class="aviso-main">
+        <div class="aviso-tit">${_avEsc(a.titulo||'(sin título)')}</div>
+        <div class="aviso-prev">${_avEsc((a.mensaje||'').replace(/\s+/g,' '))}</div>
+        ${resp?`<div class="aviso-estado">↩︎ Respondiste ${resp} ${resp===1?'vez':'veces'}</div>`:''}
+      </div>
+      <div class="aviso-meta">${_avFechaCorta(a.ts)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Avisos enviados (superusuario) ──
+function renderAvisosSuper(){
+  const el=document.getElementById('emitir-list'), empty=document.getElementById('emitir-empty');
+  if(!el || !ES_SUPER) return;
+  empty?.classList.toggle('hidden', avisosLista.length>0);
+  const c=document.getElementById('emitir-count');
+  if(c){ const n=avisosLista.filter(a=>!a.leido).length; c.textContent = avisosLista.length ? `${avisosLista.length} enviados · ${n} sin leer` : ''; }
+  el.innerHTML = avisosLista.map(a=>{
+    const resp = buzonLista.filter(b=>b.avisoId===a.id).length;
+    const estado = a.leido
+      ? `<div class="aviso-estado ok">✓ Leído el ${_avFecha(a.leidoTs)}</div>`
+      : `<div class="aviso-estado">Sin leer</div>`;
+    return `<div class="aviso-row" onclick="_tocarDoble('${a.id}',this,abrirAviso)">
+      <div class="aviso-main">
+        <div class="aviso-tit" style="font-weight:700">${_avEsc(a.titulo||'(sin título)')}</div>
+        <div class="aviso-prev">${_avEsc((a.mensaje||'').replace(/\s+/g,' '))}</div>
+        ${estado}
+        ${resp?`<div class="aviso-estado">💬 ${resp} respuesta${resp!==1?'s':''} del jefe</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="aviso-meta">${_avFechaCorta(a.ts)}</div>
+        <button class="pass-eye" style="font-size:12px" aria-label="Eliminar aviso" onclick="event.stopPropagation();eliminarAviso('${a.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Buzón (superusuario) ──
+function renderBuzonSuper(){
+  const el=document.getElementById('buzon-super-list'), empty=document.getElementById('buzon-super-empty');
+  if(!el || !ES_SUPER) return;
+  empty?.classList.toggle('hidden', buzonLista.length>0);
+  el.innerHTML = buzonLista.map(b=>`<div class="aviso-row${b.leido?'':' unread'}" onclick="_tocarDoble('${b.id}',this,abrirBuzon)">
+      <span class="aviso-dot"></span>
+      <div class="aviso-main">
+        <div class="aviso-tit">${_avEsc(b.titulo||'(sin título)')}</div>
+        <div class="aviso-prev">${_avEsc(b.de||'Jefe')} — ${_avEsc((b.mensaje||'').replace(/\s+/g,' '))}</div>
+        ${b.respondido?'<div class="aviso-estado">↩︎ Respondido</div>':''}
+      </div>
+      <div class="aviso-meta">${_avFechaCorta(b.ts)}</div>
+    </div>`).join('');
+}
+
+// ── Abrir aviso (doble toque) ──
+async function abrirAviso(id){
+  const a=avisosLista.find(x=>x.id===id); if(!a) return;
+  _avisoAbiertoId=id;
+  document.getElementById('av-m-resp').value='';
+  _pintarModalAviso();
+  openModal('modal-aviso');
+  // El jefe lo abre → queda marcado como leído con fecha y hora (no cuenta la vista previa del superusuario)
+  if(ROL==='jefe' && !ES_SUPER && !_verComoBackup && !a.leido){
+    a.leido=true; a.leidoTs=new Date();
+    renderAvisosJefe(); _actualizarBadgesAvisos(); _pintarModalAviso();
+    if(window._dbReady){
+      const {doc,updateDoc,serverTimestamp}=window._fb;
+      updateDoc(doc(window._db,'avisos',id),{leido:true, leidoTs:serverTimestamp(), leidoPor:NOMBRE||'Jefe'})
+        .catch(e=>{ console.error('marcar aviso leído:',e); mostrarNotif('⚠️ No se pudo marcar como leído','warn'); });
+    }
+  }
+}
+function _pintarModalAviso(){
+  const a=avisosLista.find(x=>x.id===_avisoAbiertoId); if(!a) return;
+  document.getElementById('av-m-titulo').textContent=a.titulo||'(sin título)';
+  document.getElementById('av-m-fecha').textContent='Enviado el '+_avFecha(a.ts);
+  const est=document.getElementById('av-m-estado');
+  if(ES_SUPER){
+    est.className='aviso-estado'+(a.leido?' ok':'');
+    est.textContent = a.leido ? `✓ Leído el ${_avFecha(a.leidoTs)}` : 'El jefe aún no lo abre';
+  } else { est.className='aviso-estado'; est.textContent=''; }
+  document.getElementById('av-m-cuerpo').textContent=a.mensaje||'';
+  const hilo=buzonLista.filter(b=>b.avisoId===a.id).slice().sort((x,y)=>(_tsADate(x.ts)||0)-(_tsADate(y.ts)||0));
+  document.getElementById('av-m-hilo').innerHTML = hilo.length
+    ? '<div class="inp-label" style="margin-bottom:2px">Respuestas</div>'+hilo.map(b=>`<div class="aviso-hilo-msg"><div class="aviso-hilo-meta">${_avEsc(b.de||'Jefe')} · ${_avFecha(b.ts)}${ES_SUPER?'':(b.leido?' · ✓ Visto por el superusuario':' · Enviado')}</div>${_avEsc(b.mensaje||'')}</div>`).join('')
+    : '';
+  document.getElementById('av-m-resp-lbl').textContent = ES_SUPER ? 'Responder (llega como aviso nuevo)' : 'Responder';
+}
+async function enviarRespuestaAviso(){
+  const a=avisosLista.find(x=>x.id===_avisoAbiertoId); if(!a) return;
+  const ta=document.getElementById('av-m-resp');
+  const txt=ta.value.trim();
+  if(!txt){ mostrarNotif('⚠️ Escribe tu respuesta','warn'); ta.focus(); return; }
+  if(_verComoBackup){ mostrarNotif('👁️ Estás en vista previa: la respuesta no se envía','warn'); return; }
+  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return; }
+  const btn=document.getElementById('av-m-enviar'); btn.disabled=true;
+  try{
+    if(ES_SUPER){
+      await _crearAviso('Re: '+_sinRe(a.titulo), txt, {refAvisoId:a.id});
+    } else {
+      const {collection,addDoc,serverTimestamp}=window._fb;
+      await addDoc(collection(window._db,'buzon'),{
+        titulo:'Re: '+_sinRe(a.titulo), mensaje:txt, avisoId:a.id, avisoTitulo:a.titulo||'',
+        de:NOMBRE||'Jefe', ts:serverTimestamp(), leido:false, leidoTs:null
+      });
+      _registrarAuditoria('Respuesta del jefe a aviso', `Aviso: ${a.titulo||''}`);
+    }
+    ta.value='';
+    mostrarNotif('✅ Respuesta enviada');
+  }catch(e){ console.error('enviarRespuestaAviso:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); }
+  btn.disabled=false;
+}
+function abrirMensajeNuevoJefe(){
+  document.getElementById('bzn-titulo').value='';
+  document.getElementById('bzn-msg').value='';
+  openModal('modal-buzon-nuevo');
+  setTimeout(()=>document.getElementById('bzn-titulo').focus(),150);
+}
+async function enviarMensajeNuevoJefe(){
+  const titulo=document.getElementById('bzn-titulo').value.trim();
+  const msg=document.getElementById('bzn-msg').value.trim();
+  if(!titulo){ mostrarNotif('⚠️ Escribe un título','warn'); return; }
+  if(!msg){ mostrarNotif('⚠️ Escribe el mensaje','warn'); return; }
+  if(_verComoBackup){ mostrarNotif('👁️ Estás en vista previa: el mensaje no se envía','warn'); return; }
+  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return; }
+  try{
+    const {collection,addDoc,serverTimestamp}=window._fb;
+    await addDoc(collection(window._db,'buzon'),{
+      titulo, mensaje:msg, avisoId:null, avisoTitulo:'', de:NOMBRE||'Jefe', ts:serverTimestamp(), leido:false, leidoTs:null
+    });
+    _registrarAuditoria('Mensaje del jefe al superusuario', titulo);
+    closeModal('modal-buzon-nuevo');
+    mostrarNotif('✅ Mensaje enviado al superusuario');
+  }catch(e){ console.error('enviarMensajeNuevoJefe:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); }
+}
+
+// ── Emitir avisos (superusuario) ──
+async function _crearAviso(titulo, mensaje, extra){
+  const {collection,addDoc,serverTimestamp}=window._fb;
+  await addDoc(collection(window._db,'avisos'),{
+    titulo, mensaje, de:'Superusuario', ts:serverTimestamp(), leido:false, leidoTs:null, ...(extra||{})
+  });
+  _registrarAuditoria('Aviso emitido al jefe', titulo);
+}
+async function emitirAviso(){
+  if(!ES_SUPER){ mostrarNotif('⛔ Solo el superusuario puede emitir avisos','warn'); return; }
+  const tEl=document.getElementById('emitir-titulo'), mEl=document.getElementById('emitir-msg');
+  const titulo=tEl.value.trim(), msg=mEl.value.trim();
+  if(!titulo){ mostrarNotif('⚠️ Escribe el título del aviso','warn'); tEl.focus(); return; }
+  if(!msg){ mostrarNotif('⚠️ Escribe la descripción del aviso','warn'); mEl.focus(); return; }
+  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return; }
+  const btn=document.getElementById('emitir-btn'); btn.disabled=true;
+  try{
+    await _crearAviso(titulo, msg);
+    tEl.value=''; mEl.value='';
+    mostrarNotif('✅ Aviso enviado al jefe');
+  }catch(e){ console.error('emitirAviso:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); }
+  btn.disabled=false;
+}
+async function eliminarAviso(id){
+  if(!ES_SUPER) return;
+  const a=avisosLista.find(x=>x.id===id);
+  if(!confirm(`¿Eliminar el aviso "${a?.titulo||''}"? El jefe dejará de verlo.`)) return;
+  try{
+    const {doc,deleteDoc}=window._fb;
+    await deleteDoc(doc(window._db,'avisos',id));
+    _registrarAuditoria('Aviso eliminado', a?.titulo||id);
+    mostrarNotif('🗑️ Aviso eliminado');
+  }catch(e){ console.error('eliminarAviso:',e); mostrarNotif('❌ No se pudo eliminar','err'); }
+}
+
+// ── Leer y responder mensajes del buzón (superusuario) ──
+async function abrirBuzon(id){
+  const b=buzonLista.find(x=>x.id===id); if(!b || !ES_SUPER) return;
+  _buzonAbiertoId=id;
+  document.getElementById('bz-m-titulo').textContent=b.titulo||'(sin título)';
+  document.getElementById('bz-m-fecha').textContent=`De ${b.de||'Jefe'} · ${_avFecha(b.ts)}`;
+  document.getElementById('bz-m-ref').textContent = b.avisoId ? `En respuesta a tu aviso: ${b.avisoTitulo||''}` : 'Mensaje nuevo del jefe';
+  document.getElementById('bz-m-cuerpo').textContent=b.mensaje||'';
+  document.getElementById('bz-m-resp').value='';
+  openModal('modal-buzon');
+  if(!b.leido){
+    b.leido=true; b.leidoTs=new Date();
+    renderBuzonSuper(); _actualizarBadgesAvisos();
+    if(window._dbReady){
+      const {doc,updateDoc,serverTimestamp}=window._fb;
+      updateDoc(doc(window._db,'buzon',id),{leido:true, leidoTs:serverTimestamp()}).catch(e=>console.error('buzón leído:',e));
+    }
+  }
+}
+async function responderBuzon(){
+  const b=buzonLista.find(x=>x.id===_buzonAbiertoId); if(!b || !ES_SUPER) return;
+  const ta=document.getElementById('bz-m-resp');
+  const txt=ta.value.trim();
+  if(!txt){ mostrarNotif('⚠️ Escribe tu respuesta','warn'); ta.focus(); return; }
+  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return; }
+  try{
+    await _crearAviso('Re: '+_sinRe(b.titulo), txt, {refBuzonId:b.id});
+    const {doc,updateDoc,serverTimestamp}=window._fb;
+    updateDoc(doc(window._db,'buzon',b.id),{respondido:true, respondidoTs:serverTimestamp()}).catch(()=>{});
+    closeModal('modal-buzon');
+    mostrarNotif('✅ Respuesta enviada al jefe');
+  }catch(e){ console.error('responderBuzon:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); }
+}
+
+function renderAccesosJefe(){
+  const ult=document.getElementById('control-jefe-ultimo'), lst=document.getElementById('control-jefe-lista');
+  if(!ult||!lst) return;
+  const lista=(accesos||[]).filter(a=>a.rol==='jefe').map(a=>({a,d:_tsADate(a.ts)})).filter(x=>x.d).sort((x,y)=>y.d-x.d);
+  if(!lista.length){
+    ult.innerHTML = _errAccesos ? ('🚫 ERROR: '+_errAccesos) : 'Aún no hay accesos del jefe registrados.';
+    lst.innerHTML=''; return;
+  }
+  const fmt=d=>`${_fmtDiaC(_claveDia(d))} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} hrs`;
+  const hoyStr=_claveDia(new Date());
+  const hoy=lista.filter(x=>_claveDia(x.d)===hoyStr).length;
+  ult.innerHTML=`<div style="font-size:11px;color:var(--gy)">Último acceso</div><div style="font-weight:700;font-size:15px">${fmt(lista[0].d)}</div><div style="font-size:11px;color:var(--gy);margin-top:4px">${hoy} acceso${hoy!==1?'s':''} hoy · ${lista.length} en total</div>`;
+  lst.innerHTML=lista.slice(0,30).map(x=>`<div class="cdc-row"><span class="cdc-pn">${x.a.nombre||'Jefe'}</span><span class="cdc-pt" style="font-weight:400;font-size:11px;color:var(--gy)">${fmt(x.d)}</span></div>`).join('');
+}
 function renderControlPanel(){
   if(!ES_SUPER) return;
+  renderAccesosJefe();
   const audEl=document.getElementById('control-auditoria-list'), audEmpty=document.getElementById('control-auditoria-empty');
   if(!audEl) return;
   if(!auditoria.length){
@@ -3551,7 +4211,7 @@ function _desgloseAccesosDiaHTML(lista){
   html+=lista.map(a=>{
     const d=_tsADate(a.ts);
     const hora=d?String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):'--:--';
-    const rolTxt=a.rol==='super'?'👑 Superusuario':a.rol==='jefe'?'Jefe':'Mesero';
+    const rolTxt=a.rol==='super'?'👑 Superusuario':a.rol==='jefe'?'👔 Jefe':a.rol==='barra'?'Barra':'Mesero';
     return `<div class="cdc-row"><span class="cdc-pn">${hora} hrs · ${a.nombre||'—'}</span><span class="cdc-pt" style="font-weight:400;font-size:11px;color:var(--gy)">${rolTxt}</span></div>`;
   }).join('');
   html+='</div>';
@@ -3943,6 +4603,7 @@ function _exportarTurnoPDF(id){
 }
 
 function switchTab(btn,view){
+  if(!_tabPermitida(view)){ _avisoSinPermiso(); return; }
   if(view!=='menu'&&view!=='jmenu') _ocultarBreadcrumb();
   if(view==='menu'){ _navNivel=0;_navCatPpal='';_navSubcat=''; }
   if(view==='jmenu'){ _navNivelJefe=0;_navCatPpalJefe='';_navSubcatJefe=''; }
@@ -3960,9 +4621,13 @@ function salir(){
   document.getElementById('jnav-super-btn')?.classList.add('hidden');
   document.getElementById('jnav-control-btn')?.classList.add('hidden');
   document.getElementById('jnav-funciones-btn')?.classList.add('hidden');
+  document.getElementById('jnav-buzon-btn')?.classList.add('hidden');
+  document.getElementById('jnav-emitir-btn')?.classList.add('hidden');
+  document.getElementById('hamb-dot')?.classList.add('hidden');
   document.getElementById('app').style.display='none';
   document.getElementById('scr-role').style.display='flex';
   document.getElementById('cart-fab').classList.add('hidden');
+  _aplicarEstadoApp();
 }
 
 // ══════════════════════════════════════════
@@ -4089,7 +4754,7 @@ function iniciarListenersFirebase(){
   _fbUnsubs.push(onSnapshot(query(collection(db,'accesos'),orderBy('ts','desc'),limit(500)), snap=>{
     accesos = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
     _errAccesos=null;
-    if(ES_SUPER){ renderSuperPanel(); renderAccesosPorDia(); }
+    if(ES_SUPER){ renderSuperPanel(); renderAccesosPorDia(); renderAccesosJefe(); }
   }, err=>{ console.error('accesos:',err); _errAccesos=(err.code||err.message); if(ES_SUPER) renderAccesosPorDia(); }));
   // Auditoría — registro exhaustivo de operaciones (solo el superusuario lo ve)
   _fbUnsubs.push(onSnapshot(query(collection(db,'auditoria'),orderBy('ts','desc'),limit(300)), snap=>{
@@ -4107,7 +4772,7 @@ function iniciarListenersFirebase(){
   _fbUnsubs.push(onSnapshot(collection(db,'usuarios'), snap=>{
     usuariosApp = snap.docs.map(d=>({id:d.id,...d.data()}));
     _errUsuarios=null;
-    if(ES_SUPER) renderUsuariosControl();
+    if(ES_SUPER){ renderUsuariosControl(); renderContrasenas(); }
   }, err=>{ console.error('usuarios:',err); _errUsuarios=(err.code||err.message); if(ES_SUPER) renderUsuariosControl(); }));
 
   // Movimientos de caja (retiros/depósitos) — sincronizados en nube
@@ -4155,8 +4820,25 @@ function iniciarListenersFirebase(){
     } else {
       PERMISOS = { jefe:{}, mesero:{}, barra:{} };
     }
+    try{ localStorage.setItem('mg_permisos', JSON.stringify(PERMISOS)); }catch(_){}
     if(ES_SUPER) renderFunciones();
+    if(ROL) _aplicarPestanasPermitidas();
   }, err=>console.error('config/permisos:',err)));
+
+  // Avisos (superusuario → jefe) — bandeja del jefe y control de lectura del superusuario
+  _fbUnsubs.push(onSnapshot(query(collection(db,'avisos'),orderBy('ts','desc'),limit(300)), snap=>{
+    avisosLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    _notificarNuevos('avisos', avisosLista, a=>ROL==='jefe' && !ES_SUPER && !_verComoBackup && !a.leido, a=>`📩 Nuevo aviso: ${a.titulo||''}`);
+    renderAvisosJefe(); renderAvisosSuper(); _actualizarBadgesAvisos();
+    if(!document.getElementById('modal-aviso')?.classList.contains('hidden')) _pintarModalAviso();
+  }, err=>console.error('avisos:',err)));
+  // Buzón (jefe → superusuario) — comentarios y respuestas del jefe
+  _fbUnsubs.push(onSnapshot(query(collection(db,'buzon'),orderBy('ts','desc'),limit(300)), snap=>{
+    buzonLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    _notificarNuevos('buzon', buzonLista, b=>ES_SUPER && !b.leido, b=>`📬 Mensaje del jefe: ${b.titulo||''}`);
+    renderBuzonSuper(); renderAvisosSuper(); _actualizarBadgesAvisos();
+    if(!document.getElementById('modal-aviso')?.classList.contains('hidden')) _pintarModalAviso();
+  }, err=>console.error('buzon:',err)));
 
   // Config de ticket — sincronizado en nube (aplica a todos los perfiles)
   _fbUnsubs.push(onSnapshot(doc(db,'config','ticket'), snap=>{
@@ -7250,8 +7932,10 @@ function _switchToSwipeTab(tabsArr,idx){
       }
       return;
     }
-    const tabsArr=ROL==='mesero'?SWIPE_TABS_MESERO:ROL==='barra'?SWIPE_TABS_BARRA:ROL==='jefe'?SWIPE_TABS_JEFE:null;
-    if(!tabsArr)return;
+    const _tabsBase=ROL==='mesero'?SWIPE_TABS_MESERO:ROL==='barra'?SWIPE_TABS_BARRA:ROL==='jefe'?SWIPE_TABS_JEFE:null;
+    if(!_tabsBase)return;
+    const tabsArr=_tabsBase.filter(_tabPermitida);
+    if(!tabsArr.length)return;
     let idx=_getCurrentTabIndex(tabsArr);if(idx===-1)idx=0;
     if(dx<0)_switchToSwipeTab(tabsArr,idx+1);else _switchToSwipeTab(tabsArr,idx-1);
   },{passive:true});
@@ -8268,6 +8952,7 @@ function cerrarJefeMenu(){
   document.getElementById('jefe-menu-overlay').classList.add('hidden');
 }
 function jefeNavTo(btn, view, label){
+  if(!_tabPermitida(view)){ cerrarJefeMenu(); _avisoSinPermiso(); return; }
   cerrarJefeMenu();
   document.querySelectorAll('.jnav-item').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -8280,8 +8965,11 @@ function jefeNavTo(btn, view, label){
   if(view==='cortes') renderCortes();
   if(view==='jbalance') renderBalance();
   if(view==='jfunciones') renderFunciones();
-  if(view==='jsuper'){ renderSuperPanel(); _cargarTodoSuperusuario(); renderEliminados(); }
-  if(view==='jcontrol'){ renderControlPanel(); renderUsuariosControl(); _cargarTodoControl(); }
+  if(view==='jsuper'){ renderSuperPanel(); _cargarTodoSuperusuario(); renderEliminados(); _refrescarEstadoAppUI(); }
+  if(view==='jcontrol'){ renderControlPanel(); renderUsuariosControl(); _cargarTodoControl(); _cargarContrasenas(); }
+  if(view==='javisos') renderAvisosJefe();
+  if(view==='jbuzon') renderBuzonSuper();
+  if(view==='jemitir') renderAvisosSuper();
   if(view==='jdispositivos') _cargarDispositivosDirecto();
   if(view==='jmenu'){ renderMenuJefe(); actualizarFAB(); }
   else {
@@ -9799,6 +10487,7 @@ function recuperarEstadoSesion() {
 
     // Entrar directo a la app sin pedir credenciales
     entrarApp();
+    if(ROL==='jefe') _cuandoDbListo(()=>_registrarAcceso(NOMBRE||'Jefe','jefe'));
 
     // Restaurar vista después de que renderice
     setTimeout(()=>{
