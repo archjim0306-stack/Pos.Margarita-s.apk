@@ -1692,6 +1692,7 @@ document.dispatchEvent(new Event('db-ready'));
     <button class="tab-btn" data-view="mfuente" onclick="switchTab(this,'mfuente')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V6M4 6h8M4 6c0-1.5 2-1.5 2-1.5M12 6v14M12 6c0-1.5-2-1.5-2-1.5"/><path d="M16 20l2-8 2 8M16.8 18h2.4" stroke-linejoin="round"/></svg><span>Fuente</span></button>
     <button class="tab-btn" data-view="cortes" onclick="switchTab(this,'cortes')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h6M7 3h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 012-2z"/><path d="M9 11h6M9 15h4"/></svg><span>Cortes</span></button>
     <button class="tab-btn" data-view="javisos" onclick="switchTab(this,'javisos')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span>Avisos</span><span class="tab-badge hidden" id="bdg-avisos-m"></span></button>
+    <button class="tab-btn" data-view="jmibuzon" onclick="switchTab(this,'jmibuzon')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg><span>Buzón</span></button>
   </div>
   <div class="tabbar hidden" id="tabs-barra">
     <button class="tab-btn active" data-view="bpend" onclick="switchTab(this,'bpend')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C9 7 6 9.5 6 14a6 6 0 0012 0c0-2-1-4-2-5.5C15 11 13.5 12 13 14c0-3-1-8-1-12z" stroke-linejoin="round"/></svg><span>Pendientes</span><span class="tab-badge hidden" id="bdg-barra"></span></button>
@@ -1700,6 +1701,7 @@ document.dispatchEvent(new Event('db-ready'));
     <button class="tab-btn" data-view="bfuente" onclick="switchTab(this,'bfuente')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V6M4 6h8M4 6c0-1.5 2-1.5 2-1.5M12 6v14M12 6c0-1.5-2-1.5-2-1.5"/><path d="M16 20l2-8 2 8M16.8 18h2.4" stroke-linejoin="round"/></svg><span>Fuente</span></button>
     <button class="tab-btn" data-view="cortes" onclick="switchTab(this,'cortes')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h6M7 3h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 012-2z"/><path d="M9 11h6M9 15h4"/></svg><span>Cortes</span></button>
     <button class="tab-btn" data-view="javisos" onclick="switchTab(this,'javisos')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg><span>Avisos</span><span class="tab-badge hidden" id="bdg-avisos-b"></span></button>
+    <button class="tab-btn" data-view="jmibuzon" onclick="switchTab(this,'jmibuzon')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg><span>Buzón</span></button>
   </div>
   <!-- HAMBURGER MENU JEFE -->
   <div class="jefe-topbar hidden" id="tabs-jefe">
@@ -1730,6 +1732,7 @@ document.dispatchEvent(new Event('db-ready'));
       <button class="jnav-item" data-view="cortes" onclick="jefeNavTo(this,'cortes','Cortes')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h6M7 3h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 012-2z"/><path d="M9 11h6M9 15h4"/></svg> Cortes</button>
       <button class="jnav-item" data-view="jbalance" onclick="jefeNavTo(this,'jbalance','Balance')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Balance</button>
       <button class="jnav-item" id="jnav-avisos-btn" data-view="javisos" onclick="jefeNavTo(this,'javisos','Avisos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> Avisos <span class="jnav-badge hidden" id="bdg-avisos"></span></button>
+      <button class="jnav-item" id="jnav-mibuzon-btn" data-view="jmibuzon" onclick="jefeNavTo(this,'jmibuzon','Buzón')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg> Buzón</button>
       <button class="jnav-item hidden" id="jnav-super-btn" data-view="jsuper" onclick="jefeNavTo(this,'jsuper','Superusuario')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6l4 3 6-7 6 7 4-3-2 12H4L2 6z"/><path d="M4 21h16" stroke-linecap="round"/></svg> Superusuario</button>
       <button class="jnav-item hidden" id="jnav-control-btn" data-view="jcontrol" onclick="jefeNavTo(this,'jcontrol','Control')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Control</button>
       <button class="jnav-item hidden" id="jnav-funciones-btn" data-view="jfunciones" onclick="jefeNavTo(this,'jfunciones','Funciones')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Funciones</button>
@@ -2277,6 +2280,21 @@ document.dispatchEvent(new Event('db-ready'));
       <p style="font-size:11px;color:var(--gy);margin:0 0 12px;line-height:1.6">Toca dos veces un aviso para abrirlo y responder.</p>
       <div id="avisos-jefe-list"></div>
       <div class="cart-empty hidden" id="avisos-jefe-empty">No tienes avisos por ahora</div>
+    </div>
+    <!-- VISTA BUZÓN DE CADA PERFIL (jefe, meseros, barra) — enviar comentarios al superusuario -->
+    <div class="view hidden" id="view-jmibuzon">
+      <div class="sec-title" style="margin:0 0 4px">Buzón</div>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 10px;line-height:1.6">Envía aquí tus comentarios, dudas o reportes al superusuario. La respuesta te llega en Avisos.</p>
+      <div style="background:var(--wh);border:1.5px solid var(--cr-d);border-radius:var(--r);padding:14px;margin-bottom:16px">
+        <label class="inp-label" for="mbz-titulo">Título</label>
+        <input type="text" id="mbz-titulo" class="inp" maxlength="120" placeholder="Ej: Falla al imprimir">
+        <label class="inp-label" for="mbz-msg">Mensaje</label>
+        <textarea id="mbz-msg" class="aviso-ta" rows="5" placeholder="Escribe tu comentario"></textarea>
+        <button class="btn btn-or btn-full" id="mbz-btn" style="margin-top:10px" onclick="enviarBuzonPerfil()">Enviar al superusuario</button>
+      </div>
+      <div class="sec-title">Mis mensajes enviados</div>
+      <div id="mibuzon-list"></div>
+      <div class="cart-empty hidden" id="mibuzon-empty">Aún no has enviado mensajes</div>
     </div>
     <!-- VISTA BUZÓN (SUPERUSUARIO) — comentarios y respuestas del jefe -->
     <div class="view hidden" id="view-jbuzon">
@@ -3352,6 +3370,7 @@ async function entrarApp(){
   document.getElementById('jnav-buzon-btn')?.classList.toggle('hidden', !ES_SUPER);
   document.getElementById('jnav-emitir-btn')?.classList.toggle('hidden', !ES_SUPER);
   document.getElementById('jnav-avisos-btn')?.classList.toggle('hidden', ES_SUPER);
+  document.getElementById('jnav-mibuzon-btn')?.classList.toggle('hidden', ES_SUPER);
   document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.classList.add('hidden')});
   const init = ES_SUPER?'jsuper':ROL==='mesero'?'menu':ROL==='barra'?'bpend':'jordenes';
   activarView(init);
@@ -3761,15 +3780,15 @@ const PESTANAS_POR_ROL = {
     {view:'jordenes',label:'Órdenes'},{view:'jmenu',label:'Vender'},{view:'jcobrar',label:'Cobrar'},
     {view:'jcaja',label:'Caja'},{view:'jhistorial',label:'Historial'},{view:'jcarta',label:'Productos'},
     {view:'jdispositivos',label:'Accesos'},{view:'cortes',label:'Cortes'},{view:'jbalance',label:'Balance'},
-    {view:'javisos',label:'Avisos'},{view:'jconfig',label:'Configuración'},{view:'jfuente',label:'Fuente'}
+    {view:'javisos',label:'Avisos'},{view:'jmibuzon',label:'Buzón'},{view:'jconfig',label:'Configuración'},{view:'jfuente',label:'Fuente'}
   ],
   mesero:[
     {view:'menu',label:'Menú'},{view:'mordenes',label:'Órdenes'},{view:'caja',label:'Cobrar'},
-    {view:'mcaja',label:'Caja'},{view:'mfuente',label:'Fuente'},{view:'cortes',label:'Cortes'},{view:'javisos',label:'Avisos'}
+    {view:'mcaja',label:'Caja'},{view:'mfuente',label:'Fuente'},{view:'cortes',label:'Cortes'},{view:'javisos',label:'Avisos'},{view:'jmibuzon',label:'Buzón'}
   ],
   barra:[
     {view:'bpend',label:'Pendientes'},{view:'blistas',label:'Listas'},{view:'bcaja',label:'Caja'},
-    {view:'bfuente',label:'Fuente'},{view:'cortes',label:'Cortes'},{view:'javisos',label:'Avisos'}
+    {view:'bfuente',label:'Fuente'},{view:'cortes',label:'Cortes'},{view:'javisos',label:'Avisos'},{view:'jmibuzon',label:'Buzón'}
   ]
 };
 function _rolKeyActual(){ return ROL==='jefe'?'jefe':ROL==='barra'?'barra':'mesero'; }
@@ -4197,21 +4216,58 @@ function abrirMensajeNuevoJefe(){
   setTimeout(()=>document.getElementById('bzn-titulo').focus(),150);
 }
 async function enviarMensajeNuevoJefe(){
-  const titulo=document.getElementById('bzn-titulo').value.trim();
-  const msg=document.getElementById('bzn-msg').value.trim();
-  if(!titulo){ mostrarNotif('⚠️ Escribe un título','warn'); return; }
-  if(!msg){ mostrarNotif('⚠️ Escribe el mensaje','warn'); return; }
-  if(_verComoBackup){ mostrarNotif('👁️ Estás en vista previa: el mensaje no se envía','warn'); return; }
-  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return; }
+  const ok=await _enviarAlBuzon(document.getElementById('bzn-titulo').value.trim(), document.getElementById('bzn-msg').value.trim());
+  if(ok){ closeModal('modal-buzon-nuevo'); renderMiBuzon(); }
+}
+
+// ── Buzón de cada perfil: enviar comentarios al superusuario y ver el estado de lo enviado ──
+function _buzonEsMio(b){
+  if(ES_SUPER || !ROL) return false;
+  if((b.rol||'jefe')!==ROL) return false;
+  return ROL==='mesero' ? (b.de||'')===_miNombreAviso() : true; // jefe y barra son perfiles únicos
+}
+function renderMiBuzon(){
+  const el=document.getElementById('mibuzon-list'), empty=document.getElementById('mibuzon-empty');
+  if(!el) return;
+  const mios=buzonLista.filter(_buzonEsMio);
+  empty?.classList.toggle('hidden', mios.length>0);
+  el.innerHTML=mios.map(b=>{
+    const estado = b.respondido ? `<div class="aviso-estado ok">↩︎ Respondido · revisa tus Avisos</div>`
+                 : b.leido ? `<div class="aviso-estado ok">✓ Visto por el superusuario el ${_avFecha(b.leidoTs)}</div>`
+                 : `<div class="aviso-estado">Enviado · aún sin leer</div>`;
+    return `<div class="aviso-row" style="cursor:default">
+      <div class="aviso-main">
+        <div class="aviso-tit" style="font-weight:700">${_avEsc(b.titulo||'(sin título)')}</div>
+        <div style="font-size:12px;color:var(--br);white-space:pre-wrap;word-break:break-word;margin-top:3px;line-height:1.5">${_avEsc(b.mensaje||'')}</div>
+        ${estado}
+      </div>
+      <div class="aviso-meta">${_avFechaCorta(b.ts)}</div>
+    </div>`;
+  }).join('');
+}
+async function _enviarAlBuzon(titulo, msg){
+  if(!titulo){ mostrarNotif('⚠️ Escribe un título','warn'); return false; }
+  if(!msg){ mostrarNotif('⚠️ Escribe el mensaje','warn'); return false; }
+  if(_verComoBackup){ mostrarNotif('👁️ Estás en vista previa: el mensaje no se envía','warn'); return false; }
+  if(ES_SUPER || !ROL) return false;
+  if(!window._dbReady){ mostrarNotif('⚠️ Sin conexión. Intenta de nuevo','warn'); return false; }
   try{
     const {collection,addDoc,serverTimestamp}=window._fb;
     await addDoc(collection(window._db,'buzon'),{
       titulo, mensaje:msg, avisoId:null, avisoTitulo:'', de:_miNombreAviso(), rol:ROL, ts:serverTimestamp(), leido:false, leidoTs:null
     });
     _registrarAuditoria('Mensaje al superusuario', `${titulo} · ${_miNombreAviso()}`);
-    closeModal('modal-buzon-nuevo');
     mostrarNotif('✅ Mensaje enviado al superusuario');
-  }catch(e){ console.error('enviarMensajeNuevoJefe:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); }
+    return true;
+  }catch(e){ console.error('_enviarAlBuzon:',e); mostrarNotif('❌ No se pudo enviar ('+(e.code||e.message)+')','err'); return false; }
+}
+async function enviarBuzonPerfil(){
+  const t=document.getElementById('mbz-titulo'), m=document.getElementById('mbz-msg'), btn=document.getElementById('mbz-btn');
+  if(btn.disabled) return;
+  btn.disabled=true;
+  const ok=await _enviarAlBuzon(t.value.trim(), m.value.trim());
+  btn.disabled=false;
+  if(ok){ t.value=''; m.value=''; renderMiBuzon(); }
 }
 
 // ── Emitir avisos (superusuario) ──
@@ -4764,6 +4820,7 @@ function switchTab(btn,view){
   if(view==='mfuente'||view==='bfuente'||view==='jfuente') setTimeout(_fsRenderRows,50);
   if(view==='cortes'){ renderCortes(); renderCortesTurno(); }
   if(view==='javisos') renderAvisosJefe();
+  if(view==='jmibuzon') renderMiBuzon();
   _updateSwipeDots(view);
 }
 function salir(){
@@ -5066,7 +5123,7 @@ function iniciarListenersFirebase(){
   _fbUnsubs.push(onSnapshot(query(collection(db,'buzon'),orderBy('ts','desc'),limit(300)), snap=>{
     buzonLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
     _notificarNuevos('buzon', buzonLista, b=>ES_SUPER && !b.leido, b=>`📬 Mensaje de ${_deTxt(b)}: ${b.titulo||''}`);
-    renderBuzonSuper(); renderAvisosSuper(); _actualizarBadgesAvisos();
+    renderBuzonSuper(); renderAvisosSuper(); renderMiBuzon(); _actualizarBadgesAvisos();
     if(!document.getElementById('modal-aviso')?.classList.contains('hidden')) _pintarModalAviso();
   }, err=>console.error('buzon:',err)));
 
@@ -5390,11 +5447,45 @@ function _renderProdList(prods,container,target){
     if(target!=='jefe') _attachHold(container);
   }
 }
+// ── Pulsación larga segura ──
+// Antes el temporizador seguía corriendo al hacer scroll, al soltar fuera, o cuando la lista
+// se redibujaba sola con un cambio de otro dispositivo → se abría "Solicitar cancelación" sin querer.
+// Ahora solo dispara si el dedo sigue quieto sobre la MISMA tarjeta todo el tiempo.
+let _holdActual=null;
+function _cancelarHold(){ if(_holdActual){ clearTimeout(_holdActual.timer); _holdActual=null; } }
+function _holdLargo(el, ms, fn){
+  el.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse' && e.button!==0) return;
+    if(e.isPrimary===false) { _cancelarHold(); return; }      // segundo dedo = no es pulsación larga
+    _cancelarHold();
+    const h={el, x:e.clientX, y:e.clientY, id:e.pointerId, timer:null};
+    h.timer=setTimeout(()=>{
+      if(_holdActual!==h) return;
+      _holdActual=null;
+      if(!el.isConnected) return;                              // la tarjeta ya fue redibujada
+      if(document.hidden) return;
+      if(document.querySelector('.overlay:not(.hidden)')) return; // ya hay una ventana abierta
+      window._suprimirClickHasta=Date.now()+450;                 // el "soltar" no cuenta como toque
+      try{ fn(e); }catch(err){ console.error('hold:',err); }
+    }, ms);
+    _holdActual=h;
+  });
+  el.addEventListener('pointermove',e=>{
+    const h=_holdActual; if(!h || h.el!==el) return;
+    if(Math.abs(e.clientX-h.x)>8 || Math.abs(e.clientY-h.y)>8) _cancelarHold();
+  });
+  ['pointerup','pointerleave','pointercancel','pointerout','lostpointercapture'].forEach(ev=>el.addEventListener(ev,()=>{ if(_holdActual && _holdActual.el===el) _cancelarHold(); }));
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+}
+// Cualquier scroll, movimiento de dedo, cambio de pestaña o de app cancela la pulsación en curso
+['scroll','wheel'].forEach(ev=>document.addEventListener(ev,_cancelarHold,{capture:true,passive:true}));
+['touchend','touchcancel','pointerup','pointercancel','visibilitychange','blur'].forEach(ev=>window.addEventListener(ev,_cancelarHold,{capture:true,passive:true}));
+document.addEventListener('click',e=>{
+  if(window._suprimirClickHasta && Date.now()<window._suprimirClickHasta){ window._suprimirClickHasta=0; e.stopPropagation(); e.preventDefault(); }
+},true);
 function _attachHold(container){
   container.querySelectorAll('.pcard[data-id]').forEach(card=>{
-    let t; card.addEventListener('pointerdown',()=>{t=setTimeout(()=>abrirEditor(card.dataset.id),600);});
-    card.addEventListener('pointerup',()=>clearTimeout(t)); card.addEventListener('pointerleave',()=>clearTimeout(t));
-    card.addEventListener('contextmenu',e=>e.preventDefault());
+    _holdLargo(card, 600, ()=>abrirEditor(card.dataset.id));
   });
 }
 
@@ -5533,6 +5624,7 @@ let _cancelOrdenId = null;
 function abrirSolicitudCancelacion(id){
   if(!tienePermiso('cancelar_orden')){ _avisoSinPermiso(); return; }
   const o = ordenes.find(x=>x.id===id); if(!o) return;
+  if(o.estado!=='pendiente' && o.estado!=='lista') return;
   _cancelOrdenId = id;
   document.getElementById('cancel-sol-sub').textContent = `Mesa ${o.mesa} — $${(o.total||0).toFixed(2)}`;
   openModal('modal-cancel-solicitud');
@@ -5540,6 +5632,8 @@ function abrirSolicitudCancelacion(id){
 
 async function confirmarSolicitudCancelacion(){
   if(!_cancelOrdenId) return;
+  if(window._enviandoCancel) return;
+  window._enviandoCancel=true; setTimeout(()=>{ window._enviandoCancel=false; },1500);
   const _ordenCancel = ordenes.find(x=>x.id===_cancelOrdenId);
   const _mesaCancel = _ordenCancel?.mesa;
   closeModal('modal-cancel-solicitud');
@@ -5696,11 +5790,7 @@ function renderMeseroOrdenes(){
 
   // Long-press para solicitar cancelación
   el.querySelectorAll('[data-holdid]').forEach(card=>{
-    let timer;
-    card.addEventListener('pointerdown',()=>{ timer=setTimeout(()=>abrirSolicitudCancelacion(card.dataset.holdid),700); });
-    card.addEventListener('pointerup',()=>clearTimeout(timer));
-    card.addEventListener('pointerleave',()=>clearTimeout(timer));
-    card.addEventListener('contextmenu',e=>e.preventDefault());
+    _holdLargo(card, 900, ()=>abrirSolicitudCancelacion(card.dataset.holdid));
   });
 
   // Badge en tab
@@ -6101,11 +6191,7 @@ function renderBarra(){
 
   // Long-press para cancelar en barra/mesero
   el.querySelectorAll('[data-holdid]').forEach(card=>{
-    let timer;
-    card.addEventListener('pointerdown',()=>{ timer=setTimeout(()=>{ abrirSolicitudCancelacion(card.dataset.holdid); },700); });
-    card.addEventListener('pointerup',()=>clearTimeout(timer));
-    card.addEventListener('pointerleave',()=>clearTimeout(timer));
-    card.addEventListener('contextmenu',e=>e.preventDefault());
+    _holdLargo(card, 900, ()=>abrirSolicitudCancelacion(card.dataset.holdid));
   });
 
   const pend=ordenes.filter(o=>o.estado==='pendiente').length;
@@ -6179,16 +6265,12 @@ function renderCaja(){
   grid.innerHTML=keys.map(k=>`<div class="mesa-card activa" onclick="abrirCobro(${k})" data-mesa="${k}"><div class="mesa-num">${k}</div><div class="mesa-lbl">Mesa</div><div class="mesa-total">$${m[k].total.toFixed(2)}</div><div class="mesa-items-count">${m[k].items.length} productos</div><div class="hold-hint">Manten para cancelar</div></div>`).join('');
   // Long press en tarjetas de mesa del mesero
   grid.querySelectorAll('.mesa-card[data-mesa]').forEach(card=>{
-    let timer;
-    card.addEventListener('pointerdown',e=>{ timer=setTimeout(()=>{
+    _holdLargo(card, 900, ()=>{
       // Buscar la primera orden activa de esa mesa
       const mesaN=parseInt(card.dataset.mesa);
       const ord=ordenes.find(o=>o.mesa===mesaN&&(o.estado==='pendiente'||o.estado==='lista'));
       if(ord) abrirSolicitudCancelacion(ord.id);
-    },700); });
-    card.addEventListener('pointerup',()=>clearTimeout(timer));
-    card.addEventListener('pointerleave',()=>clearTimeout(timer));
-    card.addEventListener('contextmenu',e=>e.preventDefault());
+    });
   });
 }
 
@@ -8360,10 +8442,16 @@ function _switchToSwipeTab(tabsArr,idx){
   appEl.addEventListener('touchstart',e=>{
     if(document.querySelector('.overlay:not(.hidden)'))return;
     if(document.querySelector('#jefe-menu-drawer:not(.hidden)'))return;
-    if(e.target.closest('.numpad,.mbox,.cart-body,.retiro-row,.deposito-row,.hist-item,.orden-card,.pcard,.rl-inner,.jefe-drawer,.cajon-card,.cat-grid-item,.cat-list-item'))return;
+    // Por defecto el gesto NO es válido: evita usar coordenadas de un toque anterior y cambiar de pestaña "solo"
+    window._swipeValido=false;
+    if(e.touches.length>1)return;
+    if(document.querySelector('.overlay:not(.hidden)'))return;
+    if(e.target.closest('.numpad,.mbox,.cart-body,.retiro-row,.deposito-row,.hist-item,.orden-card,.pcard,.rl-inner,.jefe-drawer,.cajon-card,.cat-grid-item,.cat-list-item,.aviso-row,.hist-dia-card,input,textarea,select,button'))return;
+    window._swipeValido=true;
     _swipeStartX=e.touches[0].clientX;_swipeStartY=e.touches[0].clientY;_swipeStartTime=Date.now();_swipeLocked=false;
   },{passive:true});
   appEl.addEventListener('touchend',e=>{
+    if(!window._swipeValido)return; window._swipeValido=false;
     if(_swipeLocked)return;if(document.querySelector('.overlay:not(.hidden)'))return;
     const dx=e.changedTouches[0].clientX-_swipeStartX,dy=e.changedTouches[0].clientY-_swipeStartY,dt=Date.now()-_swipeStartTime;
     if(Math.abs(dx)<50||Math.abs(dy)>Math.abs(dx)*0.65||dt>500)return;
@@ -9420,6 +9508,7 @@ function jefeNavTo(btn, view, label){
   if(view==='jsuper'){ renderSuperPanel(); _cargarTodoSuperusuario(); renderEliminados(); _refrescarEstadoAppUI(); }
   if(view==='jcontrol'){ renderControlPanel(); renderUsuariosControl(); _cargarTodoControl(); _cargarContrasenas(); }
   if(view==='javisos') renderAvisosJefe();
+  if(view==='jmibuzon') renderMiBuzon();
   if(view==='jbuzon') renderBuzonSuper();
   if(view==='jemitir') renderAvisosSuper();
   if(view==='jdispositivos') _cargarDispositivosDirecto();
@@ -9451,7 +9540,7 @@ function renderCarritoFS(){
     <div class="ci-info" style="flex:1;min-width:0">
       <div class="ci-name" style="font-size:15px">${item.prod.nombre}</div>
       ${item.nota?`<div class="ci-note">&#128221; ${item.nota}</div>`:''}
-      <div class="ci-price" style="font-size:15px">$${(item.prod.precio*item.qty).toFixed(2)}</div>
+      <div class="ci-price" style="font-size:15px">$${(_precioCarrito(item)*item.qty).toFixed(2)}</div>
       <div id="ci-editor-${i}" style="display:none;margin-top:6px">
         <textarea id="ci-ta-${i}" style="width:100%;padding:6px 8px;border:1.5px solid var(--or);border-radius:var(--rs);font-size:14px;resize:none;height:52px;background:var(--or-bg);color:var(--br);outline:none" placeholder="Nota del cliente...">${item.nota||''}</textarea>
         <div style="display:flex;gap:5px;margin-top:4px">
@@ -9470,13 +9559,9 @@ function renderCarritoFS(){
   carrito.forEach((_,i)=>{
     const el=document.getElementById('citem-'+i);
     if(!el) return;
-    let t;
-    el.addEventListener('pointerdown',()=>{ t=setTimeout(()=>abrirNotaCarrito(i),500); });
-    el.addEventListener('pointerup',()=>clearTimeout(t));
-    el.addEventListener('pointerleave',()=>clearTimeout(t));
-    el.addEventListener('contextmenu',e=>e.preventDefault());
+    _holdLargo(el, 600, ()=>abrirNotaCarrito(i));
   });
-  const tot=carrito.reduce((s,i)=>s+i.prod.precio*i.qty,0);
+  const tot=carrito.reduce((s,i)=>s+_precioCarrito(i)*i.qty,0);
   document.getElementById('cart-fs-total-v').textContent='$'+tot.toFixed(2);
   totalRow.classList.remove('hidden');
 }
