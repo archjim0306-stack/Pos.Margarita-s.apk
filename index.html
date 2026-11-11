@@ -1763,8 +1763,13 @@ document.dispatchEvent(new Event('db-ready'));
         <button class="filtro-chip chip-lista active" id="fm-lista" onclick="toggleFiltroMesero('lista')">Listas</button>
         <button class="filtro-chip chip-cobrada active" id="fm-cobrada" onclick="toggleFiltroMesero('cobrada')">Cerradas</button>
       </div>
+      <div class="hist-date-row ord-fecha-row">
+        <input type="date" class="ord-fecha" aria-label="Fecha de las órdenes" onchange="setOrdenesFecha(this.value)">
+        <button class="btn btn-gy btn-sm ord-fecha-hoy" style="margin:0" onclick="setOrdenesFecha('')">Hoy</button>
+        <span class="ord-fecha-lbl" style="flex-basis:100%;font-size:11px;color:var(--gy)"></span>
+      </div>
       <div id="mordenes-list"></div>
-      <div class="cart-empty hidden" id="mordenes-empty">Sin órdenes con estos filtros</div>
+      <div class="cart-empty hidden" id="mordenes-empty">Sin órdenes en esta fecha con estos filtros</div>
     </div>
     <div class="view hidden" id="view-caja">
       <div class="sec-title">Mesas con órdenes activas</div>
@@ -1894,8 +1899,13 @@ document.dispatchEvent(new Event('db-ready'));
         <button class="filtro-chip chip-lista active" id="fb-lista" onclick="toggleFiltroBarra('lista')">Listas</button>
         <button class="filtro-chip chip-cobrada active" id="fb-cobrada" onclick="toggleFiltroBarra('cobrada')">Cerradas</button>
       </div>
+      <div class="hist-date-row ord-fecha-row">
+        <input type="date" class="ord-fecha" aria-label="Fecha de las órdenes" onchange="setOrdenesFecha(this.value)">
+        <button class="btn btn-gy btn-sm ord-fecha-hoy" style="margin:0" onclick="setOrdenesFecha('')">Hoy</button>
+        <span class="ord-fecha-lbl" style="flex-basis:100%;font-size:11px;color:var(--gy)"></span>
+      </div>
       <div id="barra-filtered-list"></div>
-      <div class="cart-empty hidden" id="barra-filtered-empty">Sin órdenes con estos filtros</div>
+      <div class="cart-empty hidden" id="barra-filtered-empty">Sin órdenes en esta fecha con estos filtros</div>
       <!-- IDs de compat -->
       <div id="bpend-list" style="display:none"></div>
       <div id="bpend-empty" style="display:none"></div>
@@ -1912,8 +1922,13 @@ document.dispatchEvent(new Event('db-ready'));
         <button class="filtro-chip chip-lista active" id="fj-lista" onclick="toggleFiltroJefe('lista')">Listas</button>
         <button class="filtro-chip chip-cobrada active" id="fj-cobrada" onclick="toggleFiltroJefe('cobrada')">Cerradas</button>
       </div>
+      <div class="hist-date-row ord-fecha-row">
+        <input type="date" class="ord-fecha" aria-label="Fecha de las órdenes" onchange="setOrdenesFecha(this.value)">
+        <button class="btn btn-gy btn-sm ord-fecha-hoy" style="margin:0" onclick="setOrdenesFecha('')">Hoy</button>
+        <span class="ord-fecha-lbl" style="flex-basis:100%;font-size:11px;color:var(--gy)"></span>
+      </div>
       <div id="jordenes-filtered-list"></div>
-      <div class="cart-empty hidden" id="jordenes-filtered-empty">Sin órdenes con estos filtros</div>
+      <div class="cart-empty hidden" id="jordenes-filtered-empty">Sin órdenes en esta fecha con estos filtros</div>
       <!-- IDs ocultos para compat -->
       <div id="jordenes-pend-list" style="display:none"></div>
       <div id="jordenes-listas-list" style="display:none"></div>
@@ -5608,6 +5623,30 @@ function toggleFiltroMesero(tipo){
 }
 
 // ── Fecha/hora de órdenes ──
+// Fecha del filtro de la ventana de Órdenes. Vacío = día actual en automático (cambia solo a medianoche).
+let _ordenesFecha='';
+function _fechaOrdenesActiva(){ return _ordenesFecha || _fechaISO(new Date()); }
+function _enFechaOrdenes(ts){
+  const sel=_fechaOrdenesActiva(), hoy=_fechaISO(new Date());
+  const d=_tsADate(ts);
+  if(!d) return sel===hoy; // recién creada: el servidor aún no le pone la hora → es de hoy
+  return _fechaISO(d)===sel;
+}
+function setOrdenesFecha(valor){
+  const hoy=_fechaISO(new Date());
+  _ordenesFecha = (!valor || valor===hoy) ? '' : valor;
+  _sincronizarFechaOrdenes();
+  renderMeseroOrdenes(); renderBarra(); renderJefeOrdenes();
+}
+function _sincronizarFechaOrdenes(){
+  const sel=_fechaOrdenesActiva(), hoy=_fechaISO(new Date());
+  const esHoy = sel===hoy;
+  const d=new Date(sel+'T12:00:00');
+  const txt=d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.querySelectorAll('.ord-fecha').forEach(i=>{ if(document.activeElement!==i && i.value!==sel) i.value=sel; i.max=hoy; });
+  document.querySelectorAll('.ord-fecha-lbl').forEach(l=>{ l.textContent = (esHoy?'Mostrando hoy · ':'Mostrando · ')+txt; });
+  document.querySelectorAll('.ord-fecha-hoy').forEach(b=>{ b.style.visibility = esHoy?'hidden':'visible'; });
+}
 function _esDeHoy(ts){
   if(!ts) return true; // recién creada: el servidor aún no pone la hora
   const d=_tsADate(ts); if(!d) return true;
@@ -5618,14 +5657,15 @@ function _horaExacta(ts){
   return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':')+' hrs';
 }
 function renderMeseroOrdenes(){
+  _sincronizarFechaOrdenes();
   const el=document.getElementById('mordenes-list');
   const empty=document.getElementById('mordenes-empty');
   if(!el) return;
 
   let items=[];
-  if(_filtrosMesero.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
-  if(_filtrosMesero.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
-  if(_filtrosMesero.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosMesero.pendiente) items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosMesero.lista)     items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&o.estado==='lista'));
+  if(_filtrosMesero.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_enFechaOrdenes(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   const ordenEstado={cancel_solicitada:0,revision_jefe:1,pendiente:2,lista:3,cobrada:4};
   items.sort((a,b)=>((ordenEstado[a.estado]??2)-(ordenEstado[b.estado]??2)) || ((_tsADate(b.ts)||new Date())-(_tsADate(a.ts)||new Date())));
@@ -6025,14 +6065,15 @@ function _statusLabelOrden(estado){
   return estado==='pendiente'?'Pendiente':estado==='lista'?'Lista':estado==='cancel_solicitada'?' Cancel. solicitada':estado==='revision_jefe'?'🔶 Revisión jefe':'🔵 Cerrada';
 }
 function renderBarra(){
+  _sincronizarFechaOrdenes();
   const el=document.getElementById('barra-filtered-list');
   const empty=document.getElementById('barra-filtered-empty');
   if(!el){ return; }
 
   let items=[];
-  if(_filtrosBarra.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
-  if(_filtrosBarra.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
-  if(_filtrosBarra.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosBarra.pendiente) items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosBarra.lista)     items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&o.estado==='lista'));
+  if(_filtrosBarra.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_enFechaOrdenes(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   const ordenEstado={pendiente:0,cancel_solicitada:1,revision_jefe:2,lista:3,cobrada:4};
   items.sort((a,b)=>((ordenEstado[a.estado]??0)-(ordenEstado[b.estado]??0)) || ((_tsADate(b.ts)||new Date())-(_tsADate(a.ts)||new Date())));
@@ -6828,15 +6869,16 @@ function imprimirPrueba(){ejecutarImpresion("-- PRUEBA --\nMARGARITA'S\n"+new Da
 
 // JEFE ÓRDENES — filtros por chips con colores
 function renderJefeOrdenes(){
+  _sincronizarFechaOrdenes();
   const el=document.getElementById('jordenes-filtered-list');
   const empty=document.getElementById('jordenes-filtered-empty');
   if(!el) return;
 
   // Armar lista según filtros activos
   let items=[];
-  if(_filtrosJefe.pendiente) items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
-  if(_filtrosJefe.lista)     items.push(...ordenes.filter(o=>_esDeHoy(o.ts)&&o.estado==='lista'));
-  if(_filtrosJefe.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_esDeHoy(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
+  if(_filtrosJefe.pendiente) items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&(o.estado==='pendiente'||o.estado==='cancel_solicitada'||o.estado==='revision_jefe')));
+  if(_filtrosJefe.lista)     items.push(...ordenes.filter(o=>_enFechaOrdenes(o.ts)&&o.estado==='lista'));
+  if(_filtrosJefe.cobrada)   items.push(...historial.filter(h=>(!h.tipo||h.tipo==='venta')&&_enFechaOrdenes(h.ts)).map(h=>({...h,estado:'cobrada',_histo:true})));
 
   // Ordenar: primero cancelaciones solicitadas (urgente), luego pendientes, listas, cobradas
   const orden={cancel_solicitada:0,revision_jefe:1,pendiente:2,lista:3,cobrada:4};
