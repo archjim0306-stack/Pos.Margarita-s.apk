@@ -212,6 +212,21 @@ button,input,textarea,select{font-family:'Lato',sans-serif}
 .cdc-hint{font-size:10px;color:var(--gy);margin-top:6px}
 .cdc-desglose{border-top:1px dashed var(--cr-d);margin-top:10px;padding-top:8px}
 .cdc-sec{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--br-l);margin-bottom:5px}
+.mov-chip{flex:0 0 auto;border:1.5px solid var(--cr-d);background:var(--wh);color:var(--br);border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.mov-chip.active{background:var(--gn);border-color:var(--gn);color:#fff}
+.mov-row{display:flex;gap:10px;padding:9px 10px;margin-bottom:6px;background:var(--wh);border:1px solid var(--cr-d);border-radius:10px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.mov-row.tapped{background:var(--cr)}
+.mov-row.omision{border:1.5px solid var(--rd);background:rgba(196,58,58,.06)}
+.mov-hora{font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--gy);min-width:58px;padding-top:1px}
+.mov-main{flex:1;min-width:0}
+.mov-acc{font-weight:700;font-size:13px;color:var(--br)}
+.mov-sub{font-size:11.5px;color:var(--gy);margin-top:2px;overflow-wrap:anywhere}
+.mov-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:1px 6px;border-radius:6px;margin-left:4px;background:var(--cr);color:var(--br);vertical-align:middle}
+.mov-tag.om{background:var(--rd);color:#fff}
+.mov-tag.su{background:#5C3318;color:#fff}
+.mov-det-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--cr)}
+.mov-det-row span:first-child{color:var(--gy)}
+.mov-det-row span:last-child{font-weight:600;text-align:right;overflow-wrap:anywhere}
 .cdc-row{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12.5px;color:var(--br);border-bottom:1px solid var(--cr)}
 .cdc-row.corte{background:var(--bl-l);border-radius:6px;padding:6px 8px;margin:3px 0;border-bottom:none}
 .cdc-row.total{border-top:1.5px solid var(--cr-d);border-bottom:none;margin-top:6px;padding-top:8px;font-weight:800}
@@ -821,7 +836,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
          collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
          onSnapshot, query, orderBy, limit, serverTimestamp, getDoc, getDocs, arrayUnion,
-         runTransaction, writeBatch, terminate, clearIndexedDbPersistence }
+         runTransaction, writeBatch, terminate, clearIndexedDbPersistence, where }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ╔════════════════════════════════════════════════════╗
@@ -855,7 +870,7 @@ try{
 window._db  = db;
 window._fb  = { collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
                 onSnapshot, query, orderBy, limit, serverTimestamp, getDoc, getDocs, arrayUnion,
-                runTransaction, writeBatch };
+                runTransaction, writeBatch, where };
 window._fbReparar = async ()=>{
   try{ await terminate(db); }catch(e){}
   try{ await clearIndexedDbPersistence(db); }catch(e){ console.warn(e); }
@@ -1207,6 +1222,15 @@ document.dispatchEvent(new Event('db-ready'));
     <div id="cajon-det-total" style="font-family:'Cinzel',serif;font-weight:700;font-size:20px;color:var(--or);text-align:center;margin-bottom:10px"></div>
     <div id="cajon-det-list" style="max-height:340px;overflow-y:auto"></div>
     <button class="btn btn-gy btn-full" style="margin-top:10px" onclick="closeModal('modal-cajon')">Cerrar</button>
+  </div>
+</div>
+
+<!-- MODAL DETALLE DE MOVIMIENTO -->
+<div id="modal-mov-det" class="overlay hidden">
+  <div class="mbox">
+    <h3 id="mov-det-titulo">Detalle</h3>
+    <div id="mov-det-body" style="max-height:60vh;overflow-y:auto;font-size:12.5px"></div>
+    <button class="btn btn-gy btn-full" style="margin-top:10px" onclick="closeModal('modal-mov-det')">Cerrar</button>
   </div>
 </div>
 
@@ -1731,6 +1755,7 @@ document.dispatchEvent(new Event('db-ready'));
       <button class="jnav-item" data-view="jdispositivos" onclick="jefeNavTo(this,'jdispositivos','Accesos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18" stroke-width="3" stroke-linecap="round"/></svg> Accesos</button>
       <button class="jnav-item" data-view="cortes" onclick="jefeNavTo(this,'cortes','Cortes')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 7h6M7 3h10a2 2 0 012 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 012-2z"/><path d="M9 11h6M9 15h4"/></svg> Cortes</button>
       <button class="jnav-item" data-view="jbalance" onclick="jefeNavTo(this,'jbalance','Balance')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Balance</button>
+      <button class="jnav-item" id="jnav-movimientos-btn" data-view="jmovimientos" onclick="jefeNavTo(this,'jmovimientos','Movimientos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg> Movimientos</button>
       <button class="jnav-item" id="jnav-avisos-btn" data-view="javisos" onclick="jefeNavTo(this,'javisos','Avisos')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> Avisos <span class="jnav-badge hidden" id="bdg-avisos"></span></button>
       <button class="jnav-item" id="jnav-mibuzon-btn" data-view="jmibuzon" onclick="jefeNavTo(this,'jmibuzon','Buzón')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg> Buzón</button>
       <button class="jnav-item hidden" id="jnav-super-btn" data-view="jsuper" onclick="jefeNavTo(this,'jsuper','Superusuario')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 6l4 3 6-7 6 7 4-3-2 12H4L2 6z"/><path d="M4 21h16" stroke-linecap="round"/></svg> Superusuario</button>
@@ -2270,6 +2295,21 @@ document.dispatchEvent(new Event('db-ready'));
       <div class="sec-title" style="margin:0 0 10px">Funciones</div>
       <p style="font-size:11px;color:var(--gy);margin:0 0 14px;line-height:1.6">Quita o devuelve pestañas completas y acciones específicas a cada perfil (jefe, mesero y barra). Los cambios se aplican al instante en todos los dispositivos. Tú, como superusuario, siempre conservas todo.</p>
       <div id="funciones-tabla"></div>
+    </div>
+    <!-- VISTA MOVIMIENTOS — bitácora de todo lo que hace cada perfil (jefe y superusuario) -->
+    <div class="view hidden" id="view-jmovimientos">
+      <div class="sec-title" style="margin:0 0 4px">Movimientos</div>
+      <p style="font-size:11px;color:var(--gy);margin:0 0 10px;line-height:1.6" id="mov-ayuda">Toca dos veces un movimiento para ver el detalle de la operación.</p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input type="date" id="mov-fecha" class="inp" style="margin:0;flex:1" onchange="_movCambiarFecha(this.value)">
+        <button class="btn btn-gy btn-sm" onclick="_movCambiarFecha(_fechaISO(new Date()))">Hoy</button>
+      </div>
+      <input type="text" id="mov-buscar" class="inp" style="margin:0 0 8px" placeholder="Buscar por usuario, mesa, folio o acción" oninput="renderMovimientos()">
+      <select id="mov-usuario" class="inp" style="margin:0 0 8px" onchange="renderMovimientos()"><option value="">Todos los usuarios</option></select>
+      <div id="mov-chips" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px"></div>
+      <div id="mov-resumen" style="font-size:11px;color:var(--gy);margin-bottom:8px"></div>
+      <div id="mov-list"></div>
+      <div class="cart-empty hidden" id="mov-empty">Sin movimientos en este filtro</div>
     </div>
     <!-- VISTA AVISOS (JEFE) — bandeja de avisos del superusuario -->
     <div class="view hidden" id="view-javisos">
@@ -3590,17 +3630,29 @@ function _registrarAcceso(nombre, rol){
       .catch(e=>{ console.error('registrarAcceso write:',e); mostrarNotif('🚫 No se pudo guardar el acceso: '+(e.code||e.message),'warn'); });
   }catch(e){ console.warn('registrarAcceso:',e); }
 }
-function _registrarAuditoria(accion, detalle){
+function _registrarAuditoria(accion, detalle, datos){
   if(!window._dbReady) return;
   try{
     const {collection, addDoc, serverTimestamp} = window._fb;
-    addDoc(collection(window._db,'auditoria'),{
+    const esSuper = (typeof _esSuperEfectivo==='function') ? _esSuperEfectivo() : !!ES_SUPER;
+    const reg = {
       accion, detalle:detalle||'',
       usuario: NOMBRE || (ROL==='jefe'?'Jefe':ROL==='barra'?'Barra':'—'),
-      rol: ES_SUPER?'super':(ROL||'—'),
+      rol: esSuper?'super':(ROL||'—'),
+      porSuper: esSuper,
+      deviceId: (typeof DEVICE_ID!=='undefined'?DEVICE_ID:null),
+      tsLocal: new Date().toISOString(),
       ts: serverTimestamp()
-    }).catch(()=>{});
+    };
+    if(esSuper && _verComoBackup) reg.comoRol = ROL||null;
+    if(datos && typeof datos==='object') reg.datos = JSON.parse(JSON.stringify(datos));
+    addDoc(collection(window._db,'auditoria'),reg).catch(()=>{});
   }catch(e){ console.warn('registrarAuditoria:',e); }
+}
+function _datosOrden(o){
+  if(!o) return {};
+  return {ordenId:o.id||null, mesa:o.mesa??null, mesero:o.mesero||null, total:_num(o.total), estado:o.estado||null,
+    items:(o.items||[]).map(i=>({nombre:i.nombre||'', qty:parseInt(i.qty)||1, precio:_num(i.precio)}))};
 }
 let _chartSuperUso=null;
 let _errDispositivos=null, _errUsuarios=null, _errAccesos=null, _errAuditoria=null;
@@ -3779,7 +3831,7 @@ const PESTANAS_POR_ROL = {
   jefe:[
     {view:'jordenes',label:'Órdenes'},{view:'jmenu',label:'Vender'},{view:'jcobrar',label:'Cobrar'},
     {view:'jcaja',label:'Caja'},{view:'jhistorial',label:'Historial'},{view:'jcarta',label:'Productos'},
-    {view:'jdispositivos',label:'Accesos'},{view:'cortes',label:'Cortes'},{view:'jbalance',label:'Balance'},
+    {view:'jdispositivos',label:'Accesos'},{view:'cortes',label:'Cortes'},{view:'jbalance',label:'Balance'},{view:'jmovimientos',label:'Movimientos'},
     {view:'javisos',label:'Avisos'},{view:'jmibuzon',label:'Buzón'},{view:'jconfig',label:'Configuración'},{view:'jfuente',label:'Fuente'}
   ],
   mesero:[
@@ -5016,6 +5068,7 @@ function iniciarListenersFirebase(){
     });
     // Firebase es la ÚNICA fuente de verdad — sobreescribir siempre con el snapshot
     ordenes = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
+    if(!snap.metadata.fromCache){ window._srvOrdenes=true; setTimeout(_revisarOmisiones, 1500); }
     if(!_snapOrdenesIniciado){
       ordenes.forEach(o=>{
         _notifVistas.add(o.id+':nueva');
@@ -5033,6 +5086,7 @@ function iniciarListenersFirebase(){
   // Historial — TODOS los roles lo reciben; sin límite de tiempo, persiste meses
   _fbUnsubs.push(onSnapshot(query(collection(db,'historial'),orderBy('ts','desc')), snap=>{
     historial = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
+    if(!snap.metadata.fromCache){ window._srvHistorial=true; setTimeout(_revisarOmisiones, 1500); }
     _programarRender(renderHistorial, renderCortes, renderCortesTurno, renderCajones, renderRetirosDepositos, renderCajaJefe);
   }));
 
@@ -5065,6 +5119,7 @@ function iniciarListenersFirebase(){
   _fbUnsubs.push(onSnapshot(query(collection(db,'caja_movimientos'),orderBy('ts','desc')), snap=>{
     try{
       retiros = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
+      if(!snap.metadata.fromCache){ window._srvMovs=true; setTimeout(_revisarOmisiones, 1500); }
       renderRetirosDepositos();
       renderCajones();
       _programarRender(renderHistorial, renderCajaJefe);
@@ -5603,7 +5658,7 @@ function confirmarOrden(){
       mesa, mesero:meseroNombre, items, total, estado:'pendiente',
       nuevaOrden:true, creadoPorDevice: DEVICE_ID, ts:serverTimestamp()
     }).catch(e=>console.error(e));
-    _registrarAuditoria('Orden creada', `Mesa ${mesa} · $${total.toFixed(2)}`);
+    _registrarAuditoria('Orden creada', `Mesa ${mesa} · $${total.toFixed(2)}`, {mesa, mesero:meseroNombre, total, items:(items||[]).map(i=>({nombre:i.nombre||'',qty:parseInt(i.qty)||1,precio:_num(i.precio)}))});
   } else {
     // Modo offline: push local y render manual
     ordenes.unshift({id:'o'+Date.now(),mesa,mesero:meseroNombre,items,total,estado:'pendiente',ts:new Date()});
@@ -5653,7 +5708,7 @@ async function confirmarSolicitudCancelacion(){
   }
   sonarCampana();
   mostrarNotif('⚠️ Solicitud enviada al jefe');
-  _registrarAuditoria('Cancelación solicitada', `Mesa ${_mesaCancel||'—'} · Solicitó: ${NOMBRE||ROL}`);
+  _registrarAuditoria('Cancelación solicitada', `Mesa ${_mesaCancel||'—'} · Solicitó: ${NOMBRE||ROL}`, _datosOrden(_ordenCancel));
   _cancelOrdenId = null;
 }
 
@@ -5689,7 +5744,7 @@ async function jefeAccionCancelacionDirecta(id, accion){
       renderAll();
     }
     mostrarNotif('✅ Orden cancelada y eliminada');
-    _registrarAuditoria('Cancelación autorizada', `Mesa ${_mesaAcc||'—'} · Por: ${NOMBRE||'Jefe'}`);
+    _registrarAuditoria('Cancelación autorizada', `Mesa ${_mesaAcc||'—'} · Por: ${NOMBRE||'Jefe'}`, {..._datosOrden(_ordenAcc), solicito:_ordenAcc?.cancelSolicitadaPor||null});
   } else if(accion==='denegar'){
     if(window._dbReady){
       const {doc,updateDoc} = window._fb;
@@ -5699,7 +5754,7 @@ async function jefeAccionCancelacionDirecta(id, accion){
       const o=ordenes.find(x=>x.id===id); if(o) o.estado='revision_jefe'; renderAll();
     }
     mostrarNotif('🔶 Orden marcada para revisión del jefe');
-    _registrarAuditoria('Cancelación negada', `Mesa ${_mesaAcc||'—'} · Por: ${NOMBRE||'Jefe'}`);
+    _registrarAuditoria('Cancelación negada', `Mesa ${_mesaAcc||'—'} · Por: ${NOMBRE||'Jefe'}`, {..._datosOrden(_ordenAcc), solicito:_ordenAcc?.cancelSolicitadaPor||null});
   }
   _cancelOrdenId = null;
 }
@@ -6239,6 +6294,7 @@ async function accionOrden(id,accion){
       // listaDeviceId: el dispositivo que marcó lista NO suena (ya sabe que la marcó)
       // notifVistaPor:[]: reset del array para que TODOS los dispositivos vuelvan a sonar
       await updateDoc(doc(window._db,'ordenes',id),{estado:'lista',notificar:true,notifVistaPor:[],listaDeviceId:DEVICE_ID}).catch(e=>console.error('accionOrden avisar:',e));
+      _registrarAuditoria('Orden marcada lista', `Mesa ${mesa}`, _datosOrden(o));
       // Firebase onSnapshot actualizará la UI en todos los dispositivos
     } else {
       o.estado='lista';
@@ -6709,7 +6765,10 @@ async function cobrarMesaDemo(){
         return 'conflicto';
       }
       c._guardada=true;
-      if(resultado==='ok') _registrarAuditoria('Venta cobrada', `Folio #${c.folio||'—'} · Mesa ${c.mesa} · $${(c.total||0).toFixed(2)}`);
+      if(resultado==='ok') _registrarAuditoria('Venta cobrada', `Folio #${c.folio||'—'} · Mesa ${c.mesa} · $${(c.total||0).toFixed(2)}`,
+        {ventaId:c.ventaId||null, folio:c.folio||null, mesa:c.mesa, mesero:c.mesero||null, total:_num(c.total), metodoPago:c.metodoPago||'efectivo',
+         pago:_num(c.pago), cambio:_num(c.cambio), numOperacion:c.numOperacion||null,
+         items:(c.items||[]).map(i=>({nombre:i.nombre||'',qty:parseInt(i.qty)||1,precio:_num(i.precio)}))});
       // Quitar de inmediato las órdenes cobradas de la pantalla
       ordenes = ordenes.filter(o=>!ordenIds.includes(o.id));
       renderAll();
@@ -7058,6 +7117,7 @@ async function guardarEdicionOrden(){
     const {doc,updateDoc}=window._fb;
     updateDoc(doc(window._db,'ordenes',_editOrdenId),{items:o.items,total:o.total})
       .catch(e=>{ console.error(e); mostrarNotif('⚠️ Error al sincronizar, revisa la conexión','warn'); });
+    _registrarAuditoria('Orden editada', `Mesa ${o.mesa} · $${_num(o.total).toFixed(2)}`, _datosOrden(o));
   }
 }
 let _elimOrdenId = null;
@@ -7099,6 +7159,7 @@ async function marcarListaJefe(id, mesa){
     // listaDeviceId: el dispositivo que marcó lista NO suena de nuevo vía onSnapshot
     // notifVistaPor:[]: reset del array para que TODOS los dispositivos suenen
     await updateDoc(doc(window._db,'ordenes',id),{estado:'lista',notificar:true,notifVistaPor:[],listaDeviceId:DEVICE_ID});
+    _registrarAuditoria('Orden marcada lista', `Mesa ${mesa}`, _datosOrden(ordenes.find(x=>x.id===id)));
   } else {
     const o=ordenes.find(x=>x.id===id); if(o) o.estado='lista';
     renderAll();
@@ -9493,6 +9554,7 @@ function jefeNavTo(btn, view, label){
   if(view==='jconfig'){ renderPaletas(); _temaSyncInputs(); }
   if(view==='cortes') renderCortes();
   if(view==='jbalance') renderBalance();
+  if(view==='jmovimientos') abrirMovimientos();
   if(view==='jfunciones') renderFunciones();
   if(view==='jsuper'){ renderSuperPanel(); _cargarTodoSuperusuario(); renderEliminados(); _refrescarEstadoAppUI(); }
   if(view==='jcontrol'){ renderControlPanel(); renderUsuariosControl(); _cargarTodoControl(); _cargarContrasenas(); }
@@ -9873,6 +9935,244 @@ async function pedirEliminarTransferencia(){
   _renderCajonDetalle();
 }
 
+
+// ══════════════════════════════════════════
+//  CORTE DE DÍA AUTOMÁTICO + OMISIONES
+//  Si al cambiar el día quedan ventas o movimientos de días anteriores sin corte,
+//  la app hace UN corte por cada día pendiente (con la fecha de ese día), así ninguna
+//  venta queda en el corte de otro día. Cada caso queda registrado como OMISIÓN.
+//  Las mesas de días anteriores que no se cobraron también se registran como OMISIÓN.
+//  Usa ids fijos por día/orden: aunque varios dispositivos lo detecten, se registra una sola vez.
+// ══════════════════════════════════════════
+let _revisandoOmisiones=false, _omisionesMesaHechas=new Set();
+function _finDelDia(clave){ const d=new Date(clave+'T23:59:59'); d.setMilliseconds(999); return d; }
+async function _revisarOmisiones(){
+  if(_revisandoOmisiones || !window._dbReady || !ROL) return;
+  if(!window._srvHistorial || !window._srvMovs) return; // solo con datos confirmados por el servidor
+  _revisandoOmisiones=true;
+  try{
+    const {doc,runTransaction,deleteDoc,serverTimestamp}=window._fb;
+    const db=window._db;
+    const hoyK=_claveDia(new Date());
+    // ── 1. Cortes de día olvidados ──
+    const pendientes=_getVentasSinCorte();
+    const movs=(retiros||[]).filter(r=>(r.tipo==='retiro'||r.tipo==='deposito') && r.id && !String(r.id).startsWith('temp_'));
+    const porDia={};
+    pendientes.forEach(v=>{ const d=_tsADate(v.ts); if(!d) return; const k=_claveDia(d); if(k<hoyK) (porDia[k]=porDia[k]||{v:[],m:[]}).v.push(v); });
+    movs.forEach(r=>{ const d=_tsADate(r.ts); if(!d) return; const k=_claveDia(d); if(k<hoyK) (porDia[k]=porDia[k]||{v:[],m:[]}).m.push(r); });
+    const fondo=_num(localStorage.getItem('mg_fondo_caja'));
+    for(const k of Object.keys(porDia).sort()){
+      const {v,m}=porDia[k];
+      const sv=_sumarVentas(v), sm=_sumarMovs(m);
+      const totalEnCaja=(_cent(sv.efectivo)-_cent(sm.retiros)+_cent(sm.depositos))/100;
+      const corte={tipo:'corte-dia', auto:true, fecha:k, ts:_finDelDia(k), fondo, totalVentas:sv.total,
+        ventasEfectivo:sv.efectivo, ventasTarjeta:sv.tarjeta, ventasTransferencia:sv.transferencia,
+        totalRetiros:sm.retiros, totalDepositos:sm.depositos, totalEnCaja, numVentas:v.length,
+        ventaIds:v.map(x=>x.id), fondoSiguiente:fondo, retiros:JSON.parse(JSON.stringify(m)), mesero:'Corte automático'};
+      const corteRef=doc(db,'historial','autocorte_'+k);
+      const omRef=doc(db,'auditoria','omision_corte_'+k);
+      let creado=false;
+      try{
+        creado = await runTransaction(db, async tx=>{
+          const ya=await tx.get(corteRef);
+          if(ya.exists()) return false;
+          tx.set(corteRef, corte);
+          tx.set(omRef, {accion:'Corte de día no realizado', tipo:'omision', usuario:'Sistema', rol:'sistema', porSuper:false,
+            detalle:`${_fmtDiaC(k)} · Nadie hizo el corte. Se hizo automático: ${v.length} venta(s) · $${sv.total.toFixed(2)}`,
+            datos:{fecha:k, numVentas:v.length, totalVentas:sv.total, ventasEfectivo:sv.efectivo, ventasTarjeta:sv.tarjeta,
+              ventasTransferencia:sv.transferencia, totalRetiros:sm.retiros, totalDepositos:sm.depositos, totalEnCaja, fondo,
+              folios:v.map(x=>x.folio).filter(Boolean)},
+            deviceId:DEVICE_ID, tsLocal:new Date().toISOString(), ts:serverTimestamp()});
+          return true;
+        });
+      }catch(e){ console.error('auto-corte',k,e); continue; }
+      // Los retiros/depósitos de ese día ya quedaron dentro del corte: salen del turno abierto
+      for(const r of m) await deleteDoc(doc(db,'caja_movimientos',r.id)).catch(e=>console.error(e));
+      if(creado) mostrarNotif(`🗓️ Corte automático (${_fmtDiaC(k)}) · ${v.length} venta(s) · $${sv.total.toFixed(2)}`);
+    }
+    // ── 2. Mesas de días anteriores sin cobrar ──
+    if(window._srvOrdenes){
+      const viejas=(ordenes||[]).filter(o=>{ if(o.estado==='cobrada') return false; const d=_tsADate(o.ts); return d && _claveDia(d)<hoyK && !_omisionesMesaHechas.has(o.id); });
+      for(const o of viejas){
+        _omisionesMesaHechas.add(o.id);
+        const d=_tsADate(o.ts);
+        const ref=doc(db,'auditoria','omision_mesa_'+o.id);
+        await runTransaction(db, async tx=>{
+          const ya=await tx.get(ref); if(ya.exists()) return;
+          tx.set(ref,{accion:'Mesa sin cobrar', tipo:'omision', usuario:o.mesero||'—', rol:'sistema', porSuper:false,
+            detalle:`Mesa ${o.mesa??'—'} · $${_num(o.total).toFixed(2)} · Mesero: ${o.mesero||'—'} · Quedó abierta: ${_fmtDiaC(_claveDia(d))}`,
+            datos:{..._datosOrden(o), fechaOrden:d.toISOString()}, deviceId:DEVICE_ID, tsLocal:new Date().toISOString(), ts:serverTimestamp()});
+        }).catch(e=>console.error('omision mesa',e));
+      }
+    }
+  }catch(e){ console.error('_revisarOmisiones',e); }
+  _revisandoOmisiones=false;
+}
+setInterval(()=>{ try{ _revisarOmisiones(); }catch(e){} }, 60000);
+
+// ══════════════════════════════════════════
+//  VENTANA MOVIMIENTOS
+//  Superusuario: TODO lo que hace cada perfil (incluido él mismo) + accesos + omisiones.
+//  Jefe: solo jefe, meseros y barra. El superusuario es invisible para él.
+// ══════════════════════════════════════════
+let _movFecha=null, _movFiltro='todos', _movAud=[], _movAcc=[], _movUnsubs=[], _movErr=null, _movPorId={};
+const MOV_FILTROS=[['todos','Todos'],['omision','⚠️ Omisiones'],['cobros','Cobros'],['ordenes','Órdenes'],['cancel','Cancelaciones'],['caja','Caja'],['accesos','Accesos'],['otros','Otros']];
+const MOV_ROLES={jefe:'Jefe',mesero:'Mesero',barra:'Barra',super:'Superusuario',sistema:'Sistema'};
+function _movEsSuper(a){
+  return !!(a && (a.porSuper || a.rol==='super' || a.usuario==='Superusuario' || a.nombre==='Superusuario'));
+}
+function _movCategoria(a){
+  if(a._acceso) return 'accesos';
+  if(a.tipo==='omision') return 'omision';
+  const t=(a.accion||'').toLowerCase();
+  if(/venta cobrada|reimpreso|operación actualizado/.test(t)) return 'cobros';
+  if(/cancelaci|eliminaci|eliminado|renovado/.test(t)) return 'cancel';
+  if(/retiro|depósito|fondo|corte|cierre de turno|gasto|movimiento/.test(t)) return 'caja';
+  if(/orden/.test(t)) return 'ordenes';
+  if(/acceso/.test(t)) return 'accesos';
+  return 'otros';
+}
+function abrirMovimientos(){
+  const hoy=_fechaISO(new Date());
+  if(!_movFecha) _movFecha=hoy;
+  const inp=document.getElementById('mov-fecha'); if(inp) inp.value=_movFecha;
+  const ayuda=document.getElementById('mov-ayuda');
+  if(ayuda) ayuda.textContent = ES_SUPER
+    ? 'Todo lo que hace cada perfil, en tiempo real. Toca dos veces un movimiento para ver el detalle.'
+    : 'Lo que hacen el jefe, los meseros y barra, en tiempo real. Toca dos veces un movimiento para ver el detalle.';
+  _movSuscribir();
+  _revisarOmisiones();
+}
+function _movCambiarFecha(v){
+  _movFecha=v||_fechaISO(new Date());
+  const inp=document.getElementById('mov-fecha'); if(inp) inp.value=_movFecha;
+  _movSuscribir();
+}
+function _movSuscribir(){
+  _movUnsubs.forEach(u=>{ try{u();}catch(e){} }); _movUnsubs=[];
+  _movAud=[]; _movAcc=[]; _movErr=null;
+  renderMovimientos();
+  if(!window._dbReady) return;
+  const {collection,onSnapshot,query,orderBy,where}=window._fb;
+  const db=window._db;
+  const ini=new Date(_movFecha+'T00:00:00'), fin=new Date(ini); fin.setDate(fin.getDate()+1);
+  const map=snap=>_normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
+  _movUnsubs.push(onSnapshot(query(collection(db,'auditoria'),where('ts','>=',ini),where('ts','<',fin),orderBy('ts','desc')),
+    snap=>{ _movAud=map(snap); _movErr=null; _programarRender(renderMovimientos); },
+    err=>{ console.error('movimientos auditoria:',err); _movErr=err.code||err.message; renderMovimientos(); }));
+  _movUnsubs.push(onSnapshot(query(collection(db,'accesos'),where('ts','>=',ini),where('ts','<',fin),orderBy('ts','desc')),
+    snap=>{ _movAcc=map(snap).map(a=>({...a,_acceso:true,accion:'Inicio de sesión',usuario:a.nombre,detalle:'Entró a la app'})); _programarRender(renderMovimientos); },
+    err=>{ console.error('movimientos accesos:',err); }));
+}
+function _movLista(){
+  let lista=[..._movAud, ..._movAcc];
+  if(!ES_SUPER) lista=lista.filter(a=>!_movEsSuper(a));
+  return lista.map(a=>({...a,_d:_tsADate(a.ts)})).sort((x,y)=>(y._d?y._d.getTime():0)-(x._d?x._d.getTime():0));
+}
+function setMovFiltro(f){ _movFiltro=f; renderMovimientos(); }
+function _movRolTxt(a){
+  if(a._acceso) return MOV_ROLES[a.rol]||a.rol||'—';
+  let t=MOV_ROLES[a.rol]||a.rol||'—';
+  if(ES_SUPER && a.comoRol) t+=' (como '+(MOV_ROLES[a.comoRol]||a.comoRol)+')';
+  return t;
+}
+function renderMovimientos(){
+  const el=document.getElementById('mov-list'), empty=document.getElementById('mov-empty');
+  if(!el) return;
+  const base=_movLista();
+  // Chips con conteo
+  const cuenta={todos:base.length}; base.forEach(a=>{ const c=_movCategoria(a); cuenta[c]=(cuenta[c]||0)+1; });
+  const chips=document.getElementById('mov-chips');
+  if(chips) chips.innerHTML=MOV_FILTROS.map(([k,l])=>`<button class="mov-chip${_movFiltro===k?' active':''}" onclick="setMovFiltro('${k}')">${l}${cuenta[k]?' ('+cuenta[k]+')':''}</button>`).join('');
+  // Usuarios
+  const selU=document.getElementById('mov-usuario');
+  if(selU){
+    const actual=selU.value;
+    const nombres=[...new Set(base.map(a=>a.usuario||'—'))].sort((a,b)=>a.localeCompare(b,'es'));
+    selU.innerHTML='<option value="">Todos los usuarios</option>'+nombres.map(n=>`<option value="${String(n).replace(/"/g,'&quot;')}">${n}</option>`).join('');
+    if(nombres.includes(actual)) selU.value=actual;
+  }
+  const usuario=selU?.value||'';
+  const q=(document.getElementById('mov-buscar')?.value||'').trim().toLowerCase();
+  const lista=base.filter(a=>{
+    if(_movFiltro!=='todos' && _movCategoria(a)!==_movFiltro) return false;
+    if(usuario && (a.usuario||'—')!==usuario) return false;
+    if(q){ const txt=[a.accion,a.usuario,a.detalle,_movRolTxt(a)].join(' ').toLowerCase(); if(!txt.includes(q)) return false; }
+    return true;
+  });
+  _movPorId={}; lista.forEach(a=>{ _movPorId[(a._acceso?'acc_':'aud_')+a.id]=a; });
+  const res=document.getElementById('mov-resumen');
+  const nOm=base.filter(a=>a.tipo==='omision').length;
+  if(res) res.innerHTML=`${lista.length} movimiento(s) el ${_fmtDiaC(_movFecha)}${nOm?` · <b style="color:var(--rd)">${nOm} omisión(es)</b>`:''}`;
+  if(!lista.length){
+    el.innerHTML='';
+    empty?.classList.remove('hidden');
+    if(empty) empty.textContent=_movErr?('🚫 No se pudieron cargar los movimientos ('+_movErr+')'):'Sin movimientos en este filtro';
+    return;
+  }
+  empty?.classList.add('hidden');
+  el.innerHTML=lista.map(a=>{
+    const key=(a._acceso?'acc_':'aud_')+a.id;
+    const hora=a._d?a._d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+    const om=a.tipo==='omision';
+    const tagSu=(ES_SUPER && _movEsSuper(a))?'<span class="mov-tag su">Super</span>':'';
+    return `<div class="mov-row${om?' omision':''}" onclick="_tocarDoble('${key}',this,()=>abrirMovDetalle('${key}'))">
+      <div class="mov-hora">${hora}</div>
+      <div class="mov-main">
+        <div class="mov-acc">${om?'<span class="mov-tag om">Omisión</span> ':''}${a.accion||'—'}${tagSu}</div>
+        <div class="mov-sub">${a.usuario||'—'} · ${_movRolTxt(a)}${a.detalle?' — '+a.detalle:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function _movMoneda(v){ return '$'+_num(v).toFixed(2); }
+function abrirMovDetalle(key){
+  const a=_movPorId[key]; if(!a) return;
+  const om=a.tipo==='omision';
+  document.getElementById('mov-det-titulo').innerHTML=(om?'<span class="mov-tag om" style="font-size:11px">Omisión</span> ':'')+(a.accion||'Detalle');
+  const fila=(k,v)=>`<div class="mov-det-row"><span>${k}</span><span>${v}</span></div>`;
+  const disp=(dispositivos||[]).find(x=>x.id===a.deviceId);
+  let h='';
+  h+=fila('Fecha', a._d?a._d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'—');
+  h+=fila('Hora exacta', a._d?a._d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—');
+  h+=fila('Usuario', a.usuario||'—');
+  h+=fila('Perfil', _movRolTxt(a));
+  if(a.deviceId && (ES_SUPER || !_movEsSuper(a))) h+=fila('Dispositivo', disp?.nombre || ('…'+String(a.deviceId).slice(-6)));
+  if(a.detalle) h+=`<div style="margin:10px 0 4px;padding:8px 10px;background:var(--cr);border-radius:8px">${a.detalle}</div>`;
+  // Datos de la operación
+  let d=a.datos||{};
+  // Ventas registradas antes de esta versión: se busca el ticket por folio
+  if(a.accion==='Venta cobrada' && !a.datos){
+    const m=(a.detalle||'').match(/Folio #(\d+)/);
+    const v=m?(historial||[]).find(x=>_esVenta(x) && String(x.folio)===String(parseInt(m[1]))):null;
+    if(v) d={folio:v.folio, mesa:v.mesa, mesero:v.mesero, total:v.total, metodoPago:_metodoDe(v), pago:v.pago, cambio:v.cambio, numOperacion:v.numOperacion, items:v.items};
+  }
+  const ETQ={folio:'Folio',mesa:'Mesa',mesero:'Mesero',solicito:'Solicitó',metodoPago:'Método de pago',numOperacion:'Núm. de operación',estado:'Estado de la orden',
+    concepto:'Concepto',categoria:'Categoría',tipo:'Tipo',registradoPor:'Registró',fecha:'Día',numVentas:'Número de ventas',cantidad:'Cantidad',fechaOrden:'Fecha de la orden'};
+  const DIN={total:'Total',pago:'Pagó con',cambio:'Cambio',monto:'Monto',fondo:'Fondo',fondoSiguiente:'Fondo siguiente',totalVentas:'Total ventas',ventasEfectivo:'Ventas efectivo',
+    ventasTarjeta:'Ventas tarjeta',ventasTransferencia:'Ventas transferencia',totalRetiros:'Retiros',totalDepositos:'Depósitos',totalEnCaja:'Total en caja'};
+  let datosHTML='';
+  Object.keys(ETQ).forEach(k=>{ if(d[k]!=null && d[k]!=='' ){ let v=d[k];
+    if(k==='folio') v='#'+String(v).padStart(5,'0');
+    if(k==='metodoPago') v=({efectivo:'Efectivo',tarjeta:'Tarjeta',transferencia:'Transferencia'})[_metodoDe(d)]||v;
+    if(k==='fecha') v=_fmtDiaC(v);
+    if(k==='fechaOrden'){ const x=new Date(v); v=isNaN(x)?v:x.toLocaleString('es-MX'); }
+    datosHTML+=fila(ETQ[k], v); } });
+  Object.keys(DIN).forEach(k=>{ if(d[k]!=null && d[k]!=='') datosHTML+=fila(DIN[k], _movMoneda(d[k])); });
+  if(Array.isArray(d.folios) && d.folios.length) datosHTML+=fila('Folios', d.folios.map(f=>'#'+String(f).padStart(5,'0')).join(', '));
+  if(datosHTML) h+=`<div class="sec-title" style="font-size:12px;margin:12px 0 4px">Operación</div>`+datosHTML;
+  if(Array.isArray(d.items) && d.items.length){
+    h+=`<div class="sec-title" style="font-size:12px;margin:12px 0 4px">Productos</div>`;
+    h+=d.items.map(i=>fila(`${parseInt(i.qty)||1} × ${i.nombre||'—'}`, _movMoneda(_num(i.precio)*(parseInt(i.qty)||1)))).join('');
+  }
+  if(Array.isArray(d.movimientos) && d.movimientos.length){
+    h+=`<div class="sec-title" style="font-size:12px;margin:12px 0 4px">Movimientos eliminados</div>`;
+    h+=d.movimientos.map(m=>fila(`${m.tipo==='deposito'?'Depósito':'Retiro'}${m.concepto?' · '+m.concepto:''}`, _movMoneda(m.monto))).join('');
+  }
+  document.getElementById('mov-det-body').innerHTML=h;
+  openModal('modal-mov-det');
+}
+
 // ══════════════════════════════════════════
 //  CAJONES DE CAJA EN TIEMPO REAL
 // ══════════════════════════════════════════
@@ -10052,6 +10352,7 @@ async function eliminarRetiro(idOrIdx){
     if(!r){ const idx=parseInt(idOrIdx); if(!isNaN(idx)) r=retiros[idx]; }
     if(r && r.id){
       await deleteDoc(doc(window._db,'caja_movimientos',r.id)).catch(e=>console.error(e));
+      _registrarAuditoria('Movimiento de caja eliminado', `${r.tipo==='deposito'?'Depósito':'Retiro'} · $${_num(r.monto).toFixed(2)}${r.concepto?' · '+r.concepto:''}`, {tipo:r.tipo, monto:_num(r.monto), concepto:r.concepto||'', registradoPor:r.registradoPor||null});
       mostrarNotif('🗑️ Movimiento eliminado');
     } else {
       mostrarNotif('⚠️ No se encontró el movimiento','warn');
@@ -10071,6 +10372,7 @@ async function eliminarTodosMovimientos(){
     const snap=await getDocs(collection(window._db,'caja_movimientos')).catch(e=>{ console.error(e); return null; });
     if(snap){
       for(const d of snap.docs) await deleteDoc(doc(window._db,'caja_movimientos',d.id)).catch(e=>console.error(e));
+      _registrarAuditoria('Todos los movimientos de caja eliminados', `${snap.size} movimiento(s)`, {cantidad:snap.size, movimientos:snap.docs.map(d=>{ const x=d.data(); return {tipo:x.tipo, monto:_num(x.monto), concepto:x.concepto||''}; })});
       mostrarNotif(`🗑️ ${snap.size} movimiento(s) eliminado(s)`);
     }
   } else {
@@ -10125,7 +10427,7 @@ async function confirmarRetiro(){
   } else {
     guardarRetiros();
   }
-  _registrarAuditoria('Retiro de caja', `$${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`);
+  _registrarAuditoria('Retiro de caja', `$${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`, {monto, concepto});
 }
 async function confirmarDeposito(){
   const monto=parseFloat(depositoInput)||0;
@@ -10152,7 +10454,7 @@ async function confirmarDeposito(){
   } else {
     guardarRetiros();
   }
-  _registrarAuditoria('Depósito de caja', `$${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`);
+  _registrarAuditoria('Depósito de caja', `$${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`, {monto, concepto});
 }
 
 // ══════════════════════════════════════════
@@ -10199,7 +10501,7 @@ async function confirmarGasto(){
       renderHistorial(); renderRetirosDepositos();
     }
   }
-  _registrarAuditoria('Gasto del negocio', `${label} · $${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`);
+  _registrarAuditoria('Gasto del negocio', `${label} · $${monto.toFixed(2)}${concepto?' · '+concepto:''} · Por: ${NOMBRE||ROL}`, {categoria:label, monto, concepto});
 }
 
 // ══════════════════════════════════════════
@@ -10226,6 +10528,7 @@ async function _guardarFondoValor(v, dispId){
       fondo:v, updatedAt:serverTimestamp(), actualizadoPor:NOMBRE||ROL
     }).catch(e=>console.error(e));
     localStorage.setItem('mg_fondo_caja',v);
+    _registrarAuditoria('Fondo de caja registrado', `$${_num(v).toFixed(2)}`, {fondo:_num(v)});
   } else {
     localStorage.setItem('mg_fondo_caja',v);
   }
@@ -10310,7 +10613,7 @@ function _getVentasSinCorte(){
   }
   // Ventas incluidas en los dos últimos cortes (exacto por id)
   const incluidas = new Set();
-  cortes.slice(0,2).forEach(x=>(x.h.ventaIds||[]).forEach(id=>incluidas.add(id)));
+  cortes.forEach(x=>(x.h.ventaIds||[]).forEach(id=>incluidas.add(id)));
   const limite = cortes[1] ? cortes[1].d : null; // lo anterior al penúltimo corte ya está cerrado
   return ventas.filter(v=>{
     if(incluidas.has(v.id)) return false;
@@ -10377,7 +10680,9 @@ async function confirmarCierreTurno(){
     const {collection,addDoc,doc,deleteDoc,getDocs,setDoc,serverTimestamp}=window._fb;
     // Guardar corte en historial
     await addDoc(collection(window._db,'historial'),{...corteEntry,ts:serverTimestamp()}).catch(e=>console.error(e));
-    _registrarAuditoria(c.tipo==='corte-dia'?'Corte de día':'Cierre de turno', `En caja: $${(c.totalEnCaja||0).toFixed(2)}`);
+    _registrarAuditoria(c.tipo==='corte-dia'?'Corte de día':'Cierre de turno', `En caja: $${(c.totalEnCaja||0).toFixed(2)}`,
+      {fondo:c.fondo, ventasEfectivo:c.ventasEfectivo, ventasTarjeta:c.ventasTarjeta, ventasTransferencia:c.ventasTransferencia, totalVentas:c.totalVentas,
+       totalRetiros:c.totalRetiros, totalDepositos:c.totalDepositos, totalEnCaja:c.totalEnCaja, numVentas:c.numVentas, fondoSiguiente});
     // Limpiar todos los movimientos (retiros/depósitos)
     // Borrar SOLO los movimientos que entraron en este corte (uno registrado mientras
     // se confirmaba el corte se queda en el turno nuevo, no se pierde)
