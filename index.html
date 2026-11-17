@@ -2063,9 +2063,9 @@ document.dispatchEvent(new Event('db-ready'));
         </div>
         <div class="hist-kpi-card" id="kpi-efectivo">
           <div class="hist-kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg></div>
-          <div class="hist-kpi-lbl">Efectivo en caja</div>
+          <div class="hist-kpi-lbl">Efectivo en caja (ahora)</div>
           <div class="hist-kpi-val" id="kpi-efectivo-val">$0.00</div>
-          <div class="hist-kpi-sub" id="kpi-efectivo-sub">estimado</div>
+          <div class="hist-kpi-sub" id="kpi-efectivo-sub">igual que Caja</div>
         </div>
         <div class="hist-kpi-card" id="kpi-retiros">
           <div class="hist-kpi-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
@@ -3069,7 +3069,7 @@ async function verificarPinMesero(){
     if (window._dbReady) {
       const {collection, query, getDocs, doc, getDoc, updateDoc, serverTimestamp} = window._fb;
       getDocs(query(collection(window._db, 'usuarios'))).then(async snap => {
-        const usuario = snap.docs.map(d=>({id:d.id,...d.data()})).find(u=>u.nombre===nombre);
+        const usuario = snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).find(u=>u.nombre===nombre);
         if (usuario) {
           MI_DISPOSITIVO_ID = usuario.id; updateDoc(doc(window._db,'dispositivos',usuario.id),{lastSeen:serverTimestamp(),deviceId:DEVICE_ID}).catch(()=>{});
           if(usuario.estadoCuenta==='suspendido'){
@@ -3106,7 +3106,7 @@ async function verificarPinMesero(){
     if(window._dbReady){
       const {collection, query, getDocs, doc, getDoc} = window._fb;
       const snap = await getDocs(query(collection(window._db, 'usuarios')));
-      const usuario = snap.docs.map(d=>({id:d.id,...d.data()})).find(u=>u.nombre===nombre);
+      const usuario = snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})).find(u=>u.nombre===nombre);
       if(!usuario){
         errEl.textContent = '❌ Usuario no encontrado. Regístrate de nuevo.';
         return;
@@ -3493,7 +3493,7 @@ async function _refrescarCajaManual(){
   try{
     const {collection,getDocs}=window._fb;
     const snap = await getDocs(collection(window._db,'caja_movimientos'));
-    retiros = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    retiros = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     renderRetirosDepositos();
   }catch(e){
     console.error('_refrescarCajaManual error:', e);
@@ -3685,7 +3685,7 @@ async function _cargarDispositivosDirecto(){
   try{
     const {collection,getDocs}=window._fb;
     const snap=await getDocs(collection(window._db,'dispositivos'));
-    dispositivos=snap.docs.map(d=>({id:d.id,...d.data()}));
+    dispositivos=snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));
     _errDispositivos=null;
   }catch(e){ console.error('cargar dispositivos:',e); _errDispositivos=(e.code||e.message); }
   renderDispositivos();
@@ -3695,7 +3695,7 @@ async function _cargarUsuariosDirecto(){
   try{
     const {collection,getDocs}=window._fb;
     const snap=await getDocs(collection(window._db,'usuarios'));
-    usuariosApp=snap.docs.map(d=>({id:d.id,...d.data()}));
+    usuariosApp=snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));
     _errUsuarios=null;
   }catch(e){ console.error('cargar usuarios:',e); _errUsuarios=(e.code||e.message); }
   renderUsuariosControl();
@@ -3705,7 +3705,7 @@ async function _cargarAccesosDirecto(){
   try{
     const {collection,getDocs}=window._fb;
     const snap=await getDocs(collection(window._db,'accesos'));
-    accesos=_normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    accesos=_normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _errAccesos=null;
   }catch(e){ console.error('cargar accesos:',e); _errAccesos=(e.code||e.message); }
   renderSuperPanel();
@@ -3716,7 +3716,7 @@ async function _cargarAuditoriaDirecto(){
   try{
     const {collection,getDocs}=window._fb;
     const snap=await getDocs(collection(window._db,'auditoria'));
-    auditoria=_normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    auditoria=_normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _errAuditoria=null;
   }catch(e){ console.error('cargar auditoria:',e); _errAuditoria=(e.code||e.message); }
   renderControlPanel();
@@ -4510,7 +4510,7 @@ function renderCortes(){
     if(h.tipo && h.tipo!=='venta'){
       dias[k].cortes.push(h);
     } else {
-      dias[k].total+=(parseFloat(h.total)||0);
+      dias[k].total=_sumaC(dias[k].total,h.total);
       dias[k].numVentas++;
       dias[k].ventas.push(h);
     }
@@ -4612,8 +4612,8 @@ function _imprimirTicketTotalesDia(k){
     return _claveDia(dd)===k;
   });
   const retirosDia=[]; cortesDia.forEach(c=>(c.retiros||[]).forEach(r=>retirosDia.push(r)));
-  const totalRetirosDia = retirosDia.filter(r=>r.tipo==='retiro').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-  const totalDepositosDia = retirosDia.filter(r=>r.tipo==='deposito').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const totalRetirosDia = retirosDia.filter(r=>r.tipo==='retiro').reduce((s,r)=>_sumaC(s,r.monto),0);
+  const totalDepositosDia = retirosDia.filter(r=>r.tipo==='deposito').reduce((s,r)=>_sumaC(s,r.monto),0);
   if(totalRetirosDia||totalDepositosDia){
     ticket+=pad('Retiros','-$'+totalRetirosDia.toFixed(2));
     ticket+=pad('Depositos','$'+totalDepositosDia.toFixed(2));
@@ -4949,7 +4949,7 @@ function iniciarListenersFirebase(){
     { includeMetadataChanges: false },
     snap=>{
       // Reconstruir desde Firestore — fuente de verdad única
-      const fromServer = snap.docs.map(d=>({id:d.id,...d.data()}));
+      const fromServer = snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));
       // Preservar entradas temporales (creadas localmente, aún sin confirmar por Firestore)
       const temps = productos.filter(p=>p._tempId && !fromServer.some(f=>f.nombre===p.nombre));
       productos = [...fromServer, ...temps];
@@ -5015,7 +5015,7 @@ function iniciarListenersFirebase(){
       }
     });
     // Firebase es la ÚNICA fuente de verdad — sobreescribir siempre con el snapshot
-    ordenes = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    ordenes = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     if(!_snapOrdenesIniciado){
       ordenes.forEach(o=>{
         _notifVistas.add(o.id+':nueva');
@@ -5032,31 +5032,31 @@ function iniciarListenersFirebase(){
 
   // Historial — TODOS los roles lo reciben; sin límite de tiempo, persiste meses
   _fbUnsubs.push(onSnapshot(query(collection(db,'historial'),orderBy('ts','desc')), snap=>{
-    historial = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    historial = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _programarRender(renderHistorial, renderCortes, renderCortesTurno, renderCajones, renderRetirosDepositos, renderCajaJefe);
   }));
 
   // Accesos — historial de inicios de sesión (solo lo usa el superusuario)
   _fbUnsubs.push(onSnapshot(query(collection(db,'accesos'),orderBy('ts','desc'),limit(500)), snap=>{
-    accesos = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    accesos = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _errAccesos=null;
     if(ES_SUPER){ renderSuperPanel(); renderAccesosPorDia(); renderAccesosJefe(); }
   }, err=>{ console.error('accesos:',err); _errAccesos=(err.code||err.message); if(ES_SUPER) renderAccesosPorDia(); }));
   // Auditoría — registro exhaustivo de operaciones (solo el superusuario lo ve)
   _fbUnsubs.push(onSnapshot(query(collection(db,'auditoria'),orderBy('ts','desc'),limit(300)), snap=>{
-    auditoria = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    auditoria = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _errAuditoria=null;
     if(ES_SUPER) renderControlPanel();
   }, err=>{ console.error('auditoria:',err); _errAuditoria=(err.code||err.message); if(ES_SUPER) renderControlPanel(); }));
   // Dispositivos — en tiempo real, para el panel de accesos y el control del superusuario
   _fbUnsubs.push(onSnapshot(collection(db,'dispositivos'), snap=>{
-    dispositivos = snap.docs.map(d=>({id:d.id,...d.data()}));
+    dispositivos = snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));
     _errDispositivos=null;
     renderDispositivos();
   }, err=>{ console.error('dispositivos:',err); _errDispositivos=(err.code||err.message); renderDispositivos(); }));
   // Usuarios — lista completa para el panel Control (autorizar/suspender/cancelar)
   _fbUnsubs.push(onSnapshot(collection(db,'usuarios'), snap=>{
-    usuariosApp = snap.docs.map(d=>({id:d.id,...d.data()}));
+    usuariosApp = snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})}));
     _errUsuarios=null;
     if(ES_SUPER){ renderUsuariosControl(); renderContrasenas(); _poblarDestinosAviso(); }
   }, err=>{ console.error('usuarios:',err); _errUsuarios=(err.code||err.message); if(ES_SUPER) renderUsuariosControl(); }));
@@ -5064,9 +5064,10 @@ function iniciarListenersFirebase(){
   // Movimientos de caja (retiros/depósitos) — sincronizados en nube
   _fbUnsubs.push(onSnapshot(query(collection(db,'caja_movimientos'),orderBy('ts','desc')), snap=>{
     try{
-      retiros = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+      retiros = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
       renderRetirosDepositos();
       renderCajones();
+      _programarRender(renderHistorial, renderCajaJefe);
     }catch(e){
       console.error('Error procesando snapshot de caja_movimientos:', e);
     }
@@ -5074,13 +5075,13 @@ function iniciarListenersFirebase(){
 
   // Solicitudes de eliminación pendientes de autorización del jefe
   _fbUnsubs.push(onSnapshot(collection(db,'solicitudes_eliminacion'), snap=>{
-    solicitudesElim = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    solicitudesElim = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     if(ROL==='jefe') renderSolicitudesEliminacion();
   }, err=>console.error('solicitudes_eliminacion:',err)));
 
   // Registros eliminados — solo visibles y renovables por el superusuario
   _fbUnsubs.push(onSnapshot(collection(db,'eliminados'), snap=>{
-    eliminadosLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})))
+    eliminadosLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})))
       .sort((a,b)=>{ const da=_tsADate(a.ts),db2=_tsADate(b.ts); return (db2?db2.getTime():0)-(da?da.getTime():0); });
     if(ES_SUPER) renderEliminados();
   }, err=>console.error('eliminados:',err)));
@@ -5095,7 +5096,7 @@ function iniciarListenersFirebase(){
         const disp=document.getElementById(dispId);
         if(disp && fondo) disp.textContent=`Fondo: $${parseFloat(fondo).toFixed(2)}`;
       });
-      try{ renderCajones(); renderRetirosDepositos(); renderCajaJefe(); }catch(e){ console.error(e); }
+      try{ renderCajones(); renderRetirosDepositos(); renderCajaJefe(); renderHistorial(); }catch(e){ console.error(e); }
     }
   }));
 
@@ -5114,14 +5115,14 @@ function iniciarListenersFirebase(){
 
   // Avisos (superusuario → jefe) — bandeja del jefe y control de lectura del superusuario
   _fbUnsubs.push(onSnapshot(query(collection(db,'avisos'),orderBy('ts','desc'),limit(300)), snap=>{
-    avisosLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    avisosLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _notificarNuevos('avisos', avisosLista, a=>_avisoEsParaMi(a) && !_verComoBackup && !_avisoLeidoPorMi(a), a=>`📩 Nuevo aviso: ${a.titulo||''}`);
     renderAvisosJefe(); renderAvisosSuper(); _actualizarBadgesAvisos(); _revisarAvisoPendiente();
     if(!document.getElementById('modal-aviso')?.classList.contains('hidden')) _pintarModalAviso();
   }, err=>console.error('avisos:',err)));
   // Buzón (jefe → superusuario) — comentarios y respuestas del jefe
   _fbUnsubs.push(onSnapshot(query(collection(db,'buzon'),orderBy('ts','desc'),limit(300)), snap=>{
-    buzonLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    buzonLista = _normalizarTs(snap.docs.map(d=>({id:d.id,...d.data({serverTimestamps:'estimate'})})));
     _notificarNuevos('buzon', buzonLista, b=>ES_SUPER && !b.leido, b=>`📬 Mensaje de ${_deTxt(b)}: ${b.titulo||''}`);
     renderBuzonSuper(); renderAvisosSuper(); renderMiBuzon(); _actualizarBadgesAvisos();
     if(!document.getElementById('modal-aviso')?.classList.contains('hidden')) _pintarModalAviso();
@@ -6252,8 +6253,8 @@ function getMesas(){
   ordenes.filter(o=>o.estado!=='cobrada').forEach(o=>{
     if(!m[o.mesa])m[o.mesa]={items:[],total:0,ids:[]};
     const its=(o.items||[]).map(i=>({...i,precio:parseFloat(i.precio)||0,qty:parseInt(i.qty)||1}));
-    const sumaItems=its.reduce((s,i)=>s+i.precio*i.qty,0);
-    m[o.mesa].items.push(...its);m[o.mesa].total+=(sumaItems>0?sumaItems:(parseFloat(o.total)||0));m[o.mesa].ids.push(o.id);
+    const sumaItems=its.reduce((s,i)=>_sumaC(s,i.precio*i.qty),0);
+    m[o.mesa].items.push(...its);m[o.mesa].total=_sumaC(m[o.mesa].total,(sumaItems>0?sumaItems:o.total));m[o.mesa].ids.push(o.id);
   });
   return m;
 }
@@ -6288,7 +6289,7 @@ function renderJefeCobrar(){
     const k=o.mesa;
     if(!porMesa[k]) porMesa[k]={mesa:k, ordenes:[], total:0, items:[]};
     porMesa[k].ordenes.push(o);
-    porMesa[k].total += o.total||0;
+    porMesa[k].total = _sumaC(porMesa[k].total, o.total);
     porMesa[k].items.push(...(o.items||[]));
   });
 
@@ -6528,10 +6529,10 @@ async function reimprimirTicketVenta(historialId){
   });
   t+=sep+'\n';
   t+=`${'TOTAL'.padEnd(24)}${'$'+(h.total||0).toFixed(2)}\n`;
-  if(h.metodoPago==='transferencia'){
+  if(_metodoDe(h)==='transferencia'){
     t+=`${'Pago (Transferencia)'.padEnd(24)}${'$'+(h.pago||h.total||0).toFixed(2)}\n`;
     if(h.numOperacion) t+=`No. Operación: ${h.numOperacion}\n`;
-  } else if(h.metodoPago==='tarjeta'){
+  } else if(_metodoDe(h)==='tarjeta'){
     t+=`${'Pago (Tarjeta)'.padEnd(24)}${'$'+(h.pago||h.total||0).toFixed(2)}\n`;
   } else {
     t+=`${'Pago'.padEnd(24)}${'$'+(h.pago||0).toFixed(2)}\n`;
@@ -7190,33 +7191,25 @@ function renderHistorial(){
   });
 
   const ventasSolo=historialRango.filter(h=>!h.tipo||h.tipo==='venta');
-  const total=ventasSolo.reduce((s,h)=>s+(h.total||0),0);
+  const total=ventasSolo.reduce((s,h)=>_sumaC(s,h.total),0);
   const hoyItems=ventasSolo.filter(h=>{const d=h.ts instanceof Date?h.ts:new Date(h.ts);return d.toDateString()===new Date().toDateString();});
-  const totalHoy=hoyItems.reduce((s,h)=>s+(h.total||0),0);
+  const totalHoy=hoyItems.reduce((s,h)=>_sumaC(s,h.total),0);
   document.getElementById('stats-grid').innerHTML=`
     <div class="stat-box"><div class="sb-lbl">Ventas hoy</div><div class="sb-val">$${totalHoy.toFixed(2)}</div><div class="sb-sub">${hoyItems.length} cuentas</div></div>
     <div class="stat-box"><div class="sb-lbl">Total del período</div><div class="sb-val">$${total.toFixed(2)}</div><div class="sb-sub">${ventasSolo.length} cuentas</div></div>`;
 
-  // ── KPI CARDS: calcular 4 métricas, TODAS respetando el rango de fecha activo ──
-  const totalVentas = ventasSolo.reduce((s,h)=>s+(h.total||0),0);
-  // Total retiros del período (dentro del rango de fecha)
-  let totalRetiros = 0;
-  historialRango.forEach(h=>{
-    if(h.retiros) h.retiros.filter(r=>r.tipo==='retiro').forEach(r=>totalRetiros+=parseFloat(r.monto)||0);
-  });
-  retirosRango.filter(r=>r.tipo==='retiro').forEach(r=>totalRetiros+=parseFloat(r.monto)||0);
-  // Total órdenes
-  const totalOrdenes = ventasSolo.length;
-  // Efectivo en caja = fondo + ventas efectivo - retiros + depósitos (todo dentro del rango)
-  const fondo = parseFloat(localStorage.getItem('mg_fondo_caja'))||0;
-  const ventasEfectivo = ventasSolo.filter(h=>h.metodoPago!=='tarjeta'&&h.metodoPago!=='transferencia').reduce((s,h)=>s+(h.total||0),0);
-  let totalDepositos = 0;
-  retirosRango.filter(r=>r.tipo==='deposito').forEach(r=>totalDepositos+=parseFloat(r.monto)||0);
-  const efectivoCaja = fondo + ventasEfectivo - totalRetiros + totalDepositos;
-  // Poblar KPIs
+  // ── KPI CARDS: mismo motor que Caja (_sumarVentas / _resumenCajaActual) ──
+  const sv = _sumarVentas(ventasSolo);
+  const totalVentas = sv.total;
+  const movsRango = _movsEnRango(desde, hasta);
+  const totalRetiros = _sumarMovs(movsRango).retiros;
+  const totalOrdenes = sv.numVentas;
+  // "Efectivo en caja" = exactamente el mismo número que el cajón "Total en caja" de Caja
+  const cajaAhora = _resumenCajaActual();
   const kv=document.getElementById('kpi-ventas-val'); if(kv) kv.textContent='$'+totalVentas.toFixed(2);
   const ks=document.getElementById('kpi-ventas-sub'); if(ks) ks.textContent=totalOrdenes+' órdenes';
-  const ke=document.getElementById('kpi-efectivo-val'); if(ke) ke.textContent='$'+Math.max(0,efectivoCaja).toFixed(2);
+  const ke=document.getElementById('kpi-efectivo-val'); if(ke) ke.textContent='$'+cajaAhora.totalEnCaja.toFixed(2);
+  const kes=document.getElementById('kpi-efectivo-sub'); if(kes) kes.textContent='Efectivo cobrado en el período: $'+sv.efectivo.toFixed(2);
   const kr=document.getElementById('kpi-retiros-val'); if(kr) kr.textContent='$'+totalRetiros.toFixed(2);
   const rs=document.getElementById('kpi-retiros-sub'); if(rs) rs.textContent='retiros registrados';
   const ko=document.getElementById('kpi-ordenes-val'); if(ko) ko.textContent=totalOrdenes;
@@ -7240,7 +7233,7 @@ function _histRowHTML(h, soloHora){
         <div class="hi-hdr"><div class="hi-mesa">Mesa ${h.mesa}<span class="hi-type-badge badge-venta" style="margin-left:6px">Venta</span></div><div class="hi-time">${t}</div></div>
         <div class="hi-prods">${(h.items||[]).map(i=>`${i.qty}x ${i.nombre}`).join(' · ')}</div>
         <div class="hi-total">$${(h.total||0).toFixed(2)}</div>
-        <div class="hi-meta">Atendió: ${h.mesero||'—'}${h.cobrador&&h.cobrador!==h.mesero?' · Cobró: '+h.cobrador:''} · ${h.metodoPago==='tarjeta'?'Tarjeta':'Efectivo'} · Pago: $${(h.pago||0).toFixed(2)} · Cambio: $${(h.cambio||0).toFixed(2)}</div>
+        <div class="hi-meta">Atendió: ${h.mesero||'—'}${h.cobrador&&h.cobrador!==h.mesero?' · Cobró: '+h.cobrador:''} · ${({tarjeta:'Tarjeta',transferencia:'Transferencia',efectivo:'Efectivo'})[_metodoDe(h)]} · Pago: $${(h.pago||0).toFixed(2)} · Cambio: $${(h.cambio||0).toFixed(2)}</div>
         ${ROL==='jefe'?`<div style="margin-top:6px;text-align:right"><button class="btn btn-rd btn-sm" onclick="event.stopPropagation();eliminarHistorial('${h.id}')">Eliminar</button></div>`:''}
       </div>`;
     } else if(tipo==='corte-turno'){
@@ -7296,20 +7289,20 @@ function _diaTitulo(clave){
   return cap;
 }
 function _retirosDelDia(clave){
-  return (typeof retiros!=='undefined'?retiros:[]).filter(r=>_diaClave(r.ts)===clave);
+  return _movsEnRango(null,null).filter(r=>_diaClave(r.ts)===clave);
 }
 function _resumenDia(lista, clave){
   const ventas=lista.filter(h=>!h.tipo||h.tipo==='venta');
-  const sum=a=>a.reduce((s,h)=>s+(parseFloat(h.total)||0),0);
+  const sum=a=>a.reduce((s,h)=>_sumaC(s,h.total),0);
   const movs=_retirosDelDia(clave);
   return {
     ventas:ventas.length, total:sum(ventas),
-    efectivo:sum(ventas.filter(h=>h.metodoPago!=='tarjeta'&&h.metodoPago!=='transferencia')),
-    tarjeta:sum(ventas.filter(h=>h.metodoPago==='tarjeta')),
-    transferencia:sum(ventas.filter(h=>h.metodoPago==='transferencia')),
+    efectivo:sum(ventas.filter(h=>_metodoDe(h)==='efectivo')),
+    tarjeta:sum(ventas.filter(h=>_metodoDe(h)==='tarjeta')),
+    transferencia:sum(ventas.filter(h=>_metodoDe(h)==='transferencia')),
     gastos:sum(lista.filter(h=>h.tipo==='gasto')),
-    retiros:movs.filter(r=>r.tipo==='retiro').reduce((s,r)=>s+(parseFloat(r.monto)||0),0),
-    depositos:movs.filter(r=>r.tipo==='deposito').reduce((s,r)=>s+(parseFloat(r.monto)||0),0),
+    retiros:movs.filter(r=>r.tipo==='retiro').reduce((s,r)=>_sumaC(s,r.monto),0),
+    depositos:movs.filter(r=>r.tipo==='deposito').reduce((s,r)=>_sumaC(s,r.monto),0),
     movimientos:lista.length+movs.length
   };
 }
@@ -7320,7 +7313,7 @@ function _renderHistDias(items){
   // Días que solo tienen retiros/depósitos también aparecen (si el filtro es "Todos")
   if(_histFiltroTipo==='todos'){
     const desde=document.getElementById('hist-fecha-desde')?.value, hasta=document.getElementById('hist-fecha-hasta')?.value;
-    (typeof retiros!=='undefined'?retiros:[]).forEach(r=>{
+    _movsEnRango(null,null).forEach(r=>{
       const k=_diaClave(r.ts); if(k==='sin-fecha') return;
       if((desde&&k<desde)||(hasta&&k>hasta)) return;
       if(!grupos[k]) grupos[k]=[];
@@ -7489,7 +7482,7 @@ function exportarPDFRango(){
   closeModal('modal-pdf-rango');
   _registrarAuditoria('Exportación a PDF', `Historial · ${items.length} registros · Rango: ${desde||'Inicio'} a ${hasta||'Hoy'}`);
 
-  const totalVentas=items.filter(h=>!h.tipo||h.tipo==='venta').reduce((s,h)=>s+(h.total||0),0);
+  const totalVentas=items.filter(h=>!h.tipo||h.tipo==='venta').reduce((s,h)=>_sumaC(s,h.total),0);
   const rango=`${desde||'Inicio'} — ${hasta||'Hoy'}`;
   const tipoLabel={todos:'Todos los registros',venta:'Ventas',['corte-dia']:'Cortes de día',['corte-turno']:'Cierres de turno'}[tipo];
 
@@ -7583,7 +7576,7 @@ function renderBalance(){
       if(h.tipo && h.tipo!=='venta') return false;
       const hd=h.ts instanceof Date?h.ts:new Date(h.ts);
       return hd>=d && hd<sig;
-    }).reduce((s,h)=>s+(h.total||0),0);
+    }).reduce((s,h)=>_sumaC(s,h.total),0);
   });
   if(chartBalanceVentas) chartBalanceVentas.destroy();
   const c1=document.getElementById('chart-balance-ventas');
@@ -7603,15 +7596,11 @@ function renderBalance(){
     const hd=h.ts instanceof Date?h.ts:new Date(h.ts);
     return (!desde||hd>=desde) && (!hasta||hd<=hasta);
   });
-  const retirosRango = (typeof retiros!=='undefined'?retiros:[]).filter(r=>{
-    if(r.tipo!=='retiro') return false;
-    const rd=r.ts instanceof Date?r.ts:new Date(r.ts);
-    return (!desde||rd>=desde) && (!hasta||rd<=hasta);
-  });
-  const totalEfectivo = ventasRango.filter(h=>!h.metodoPago||h.metodoPago==='efectivo').reduce((s,h)=>s+(h.total||0),0);
-  const totalTarjeta = ventasRango.filter(h=>h.metodoPago==='tarjeta').reduce((s,h)=>s+(h.total||0),0);
-  const totalTransferencia = ventasRango.filter(h=>h.metodoPago==='transferencia').reduce((s,h)=>s+(h.total||0),0);
-  const totalRetiros = retirosRango.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const retirosRango = _movsEnRango(desde, hasta).filter(r=>r.tipo==='retiro');
+  const totalEfectivo = ventasRango.filter(h=>_metodoDe(h)==='efectivo').reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalTarjeta = ventasRango.filter(h=>_metodoDe(h)==='tarjeta').reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalTransferencia = ventasRango.filter(h=>_metodoDe(h)==='transferencia').reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalRetiros = retirosRango.reduce((s,r)=>_sumaC(s,r.monto),0);
   const setTxt=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent='$'+v.toFixed(2);};
   setTxt('bal-kpi-efectivo',totalEfectivo);
   setTxt('bal-kpi-tarjeta',totalTarjeta);
@@ -7647,13 +7636,13 @@ function exportarBalancePDF(){
   });
   if(!ventasRango.length){ mostrarNotif('Sin ventas en ese rango','warn'); return; }
 
-  const efectivo = ventasRango.filter(h=>!h.metodoPago||h.metodoPago==='efectivo');
-  const tarjeta = ventasRango.filter(h=>h.metodoPago==='tarjeta');
-  const transferencia = ventasRango.filter(h=>h.metodoPago==='transferencia');
-  const totalVentas = ventasRango.reduce((s,h)=>s+(h.total||0),0);
-  const totalEfectivo = efectivo.reduce((s,h)=>s+(h.total||0),0);
-  const totalTarjeta = tarjeta.reduce((s,h)=>s+(h.total||0),0);
-  const totalTransferencia = transferencia.reduce((s,h)=>s+(h.total||0),0);
+  const efectivo = ventasRango.filter(h=>_metodoDe(h)==='efectivo');
+  const tarjeta = ventasRango.filter(h=>_metodoDe(h)==='tarjeta');
+  const transferencia = ventasRango.filter(h=>_metodoDe(h)==='transferencia');
+  const totalVentas = ventasRango.reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalEfectivo = efectivo.reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalTarjeta = tarjeta.reduce((s,h)=>_sumaC(s,h.total),0);
+  const totalTransferencia = transferencia.reduce((s,h)=>_sumaC(s,h.total),0);
 
   const desdeTxt = document.getElementById('bal-fecha-desde')?.value || '—';
   const hastaTxt = document.getElementById('bal-fecha-hasta')?.value || '—';
@@ -7687,7 +7676,7 @@ function exportarBalancePDF(){
     const da=a.ts instanceof Date?a.ts:new Date(a.ts), db=b.ts instanceof Date?b.ts:new Date(b.ts);
     return da-db;
   });
-  const totalRetiros = retirosRango.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const totalRetiros = retirosRango.reduce((s,r)=>_sumaC(s,r.monto),0);
   const tablaRetiros = `
     <h2 class="sec-h rd">➖ Retiros — ${retirosRango.length} movimiento${retirosRango.length!==1?'s':''} · $${totalRetiros.toFixed(2)}</h2>
     <table>
@@ -7719,7 +7708,7 @@ function exportarBalancePDF(){
       if(h.tipo!=='ingreso_extra') return false;
       const hd=h.ts instanceof Date?h.ts:new Date(h.ts);
       return (!desde||hd>=desde) && (!hasta||hd<=hasta);
-    }).reduce((s,h)=>s+(h.total||0),0);
+    }).reduce((s,h)=>_sumaC(s,h.total),0);
     const compraMercancia = sumaCategoria('mercancia');
     const gastosOperativos = sumaCategoria('operativo');
     const gastosSinFactura = sumaCategoria('sin_factura');
@@ -7849,9 +7838,9 @@ function exportarBalanceExcel(){
   XLSX.utils.book_append_sheet(wb, ws1, 'Datos del negocio');
 
   // ── HOJA 2: Ventas — 3 columnas (efectivo / tarjeta / transferencia), cada una con su detalle y folio ──
-  const efectivo = ventasRango.filter(h=>!h.metodoPago||h.metodoPago==='efectivo');
-  const tarjeta = ventasRango.filter(h=>h.metodoPago==='tarjeta');
-  const transferencia = ventasRango.filter(h=>h.metodoPago==='transferencia');
+  const efectivo = ventasRango.filter(h=>_metodoDe(h)==='efectivo');
+  const tarjeta = ventasRango.filter(h=>_metodoDe(h)==='tarjeta');
+  const transferencia = ventasRango.filter(h=>_metodoDe(h)==='transferencia');
   const filaVenta = h=>{
     const d=h.ts instanceof Date?h.ts:new Date(h.ts);
     return [h.folio?'#'+String(h.folio).padStart(5,'0'):'—', d.toLocaleDateString('es-MX'), d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}), 'Mesa '+(h.mesa||'—'), h.mesero||'—', h.total||0];
@@ -7870,7 +7859,7 @@ function exportarBalanceExcel(){
     const ftr2 = transferencia[i]?filaVentaTransf(transferencia[i]):['','','','','','',''];
     s2.push([...fe, null,null, ...ft, null,null, ...ftr2]);
   }
-  const totalEf=efectivo.reduce((s,h)=>s+(h.total||0),0), totalTa=tarjeta.reduce((s,h)=>s+(h.total||0),0), totalTr=transferencia.reduce((s,h)=>s+(h.total||0),0);
+  const totalEf=efectivo.reduce((s,h)=>_sumaC(s,h.total),0), totalTa=tarjeta.reduce((s,h)=>_sumaC(s,h.total),0), totalTr=transferencia.reduce((s,h)=>_sumaC(s,h.total),0);
   s2.push(['SUBTOTAL','','','','',totalEf, null,null, 'SUBTOTAL','','','','',totalTa, null,null, 'SUBTOTAL','','','','','',totalTr]);
   const ws2 = XLSX.utils.aoa_to_sheet(s2);
   ws2['!cols']=[{wch:9},{wch:10},{wch:7},{wch:9},{wch:12},{wch:10},{wch:2},{wch:2},{wch:9},{wch:10},{wch:7},{wch:9},{wch:12},{wch:10},{wch:2},{wch:2},{wch:9},{wch:10},{wch:7},{wch:9},{wch:12},{wch:14},{wch:10}];
@@ -7950,7 +7939,7 @@ function exportarBalanceExcel(){
 }
 function exportarPDF(){
 
-  const total=historial.reduce((s,h)=>s+(h.total||0),0);
+  const total=historial.reduce((s,h)=>_sumaC(s,h.total),0);
   const html=`<html><head><title>Historial</title><style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}h1{color:#E8854A}table{width:100%;border-collapse:collapse;margin-top:10px}th{background:#5C3318;color:#fff;padding:7px;text-align:left;font-size:10px}td{padding:6px;border-bottom:1px solid #eee;font-size:10px}tr:nth-child(even){background:#faf6ef}.tr{background:#E8854A!important;color:#fff;font-weight:700}@media print{@page{margin:1cm}}</style></head><body>
   <h1>MARGARITA'S — Historial de Ventas</h1><div style="font-size:11px;color:#888;margin-bottom:10px">Generado: ${new Date().toLocaleString('es-MX')}</div>
   <table><tr><th>Fecha</th><th>Mesa</th><th>Mesero</th><th>Productos</th><th>Total</th><th>Pago</th><th>Cambio</th></tr>
@@ -9887,21 +9876,68 @@ async function pedirEliminarTransferencia(){
 // ══════════════════════════════════════════
 //  CAJONES DE CAJA EN TIEMPO REAL
 // ══════════════════════════════════════════
-function _metodoDe(h){ return h.metodoPago || 'efectivo'; }
+// ══════════════════════════════════════════
+//  MOTOR ÚNICO DE MONTOS — Caja, Historial, Balance, cortes y exportes
+//  usan EXACTAMENTE estas funciones, así todos los indicadores coinciden.
+//  Todo se suma en centavos enteros para evitar errores de punto flotante.
+// ══════════════════════════════════════════
+function _num(v){
+  if(typeof v==='number') return isFinite(v)?v:0;
+  if(v==null) return 0;
+  const n=parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isFinite(n)?n:0;
+}
+function _cent(v){ return Math.round(_num(v)*100); }
+function _sumaC(a,b){ return (_cent(a)+_cent(b))/100; }
+function _metodoDe(h){
+  const m=String((h&&h.metodoPago)||'').trim().toLowerCase();
+  if(m.startsWith('tarj')) return 'tarjeta';
+  if(m.startsWith('transf')) return 'transferencia';
+  return 'efectivo';
+}
+function _esVenta(h){ return !!h && (!h.tipo || h.tipo==='venta'); }
+function _sumarVentas(ventas){
+  let e=0,t=0,tr=0;
+  (ventas||[]).forEach(v=>{
+    const c=_cent(v.total), m=_metodoDe(v);
+    if(m==='tarjeta') t+=c; else if(m==='transferencia') tr+=c; else e+=c;
+  });
+  return {efectivo:e/100, tarjeta:t/100, transferencia:tr/100, total:(e+t+tr)/100, numVentas:(ventas||[]).length};
+}
+function _sumarMovs(movs){
+  let r=0,d=0;
+  (movs||[]).forEach(m=>{ if(m.tipo==='retiro') r+=_cent(m.monto); else if(m.tipo==='deposito') d+=_cent(m.monto); });
+  return {retiros:r/100, depositos:d/100};
+}
+// Estado ACTUAL de la caja (turno abierto: desde el último corte). Única fuente para
+// los cajones de Caja (jefe/mesero/barra), su detalle, el KPI del Historial y el corte.
+function _resumenCajaActual(fondoOverride){
+  const fondo = (fondoOverride!=null) ? _num(fondoOverride) : _num(localStorage.getItem('mg_fondo_caja'));
+  const ventas = _getVentasSinCorte();
+  const movs = (typeof retiros!=='undefined' && Array.isArray(retiros)) ? retiros.filter(r=>r && (r.tipo==='retiro'||r.tipo==='deposito')) : [];
+  const sv=_sumarVentas(ventas), sm=_sumarMovs(movs);
+  const totalEnCaja = (_cent(sv.efectivo)-_cent(sm.retiros)+_cent(sm.depositos))/100; // sin fondo, sin tarjeta/transferencia
+  return {
+    fondo, ventas, movs,
+    efectivo:sv.efectivo, tarjeta:sv.tarjeta, transferencia:sv.transferencia, totalVentas:sv.total,
+    totalRetiros:sm.retiros, totalDepositos:sm.depositos,
+    totalEnCaja, totalFisico:(_cent(fondo)+_cent(totalEnCaja))/100
+  };
+}
+// Todos los retiros/depósitos (pendientes + los guardados dentro de cortes) cuya
+// FECHA PROPIA cae en el rango. Así el Historial y el Balance no los pierden tras un corte.
+function _movsEnRango(desde, hasta){
+  const todos=[..._todosLosMovimientos('retiro'), ..._todosLosMovimientos('deposito')];
+  return todos.filter(r=>{
+    const d=_tsADate(r.ts); if(!d) return !desde && !hasta;
+    return (!desde||d>=desde) && (!hasta||d<=hasta);
+  });
+}
 function renderCajones(){
   if(!document.getElementById('cajon-fondo-val') && !document.getElementById('cajon-fondo-val-m') && !document.getElementById('cajon-fondo-val-b')) return;
-  const fondo = parseFloat(localStorage.getItem('mg_fondo_caja'))||0;
-  const ventas = (typeof _getVentasSinCorte==='function') ? _getVentasSinCorte() : [];
-  let efectivo=0, tarjeta=0, transferencia=0;
-  ventas.forEach(v=>{
-    const m=_metodoDe(v), t=parseFloat(v.total)||0;
-    if(m==='tarjeta') tarjeta+=t; else if(m==='transferencia') transferencia+=t; else efectivo+=t;
-  });
-  const retirosArr=(retiros||[]).filter(r=>r.tipo==='retiro');
-  const depositosArr=(retiros||[]).filter(r=>r.tipo==='deposito');
-  const totalRetiros=retirosArr.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-  const totalDepositos=depositosArr.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-  const totalEnCaja = efectivo - totalRetiros + totalDepositos; // excluye fondo, tarjeta y transferencia
+  const r=_resumenCajaActual();
+  const fondo=r.fondo, efectivo=r.efectivo, tarjeta=r.tarjeta, transferencia=r.transferencia;
+  const totalRetiros=r.totalRetiros, totalDepositos=r.totalDepositos, totalEnCaja=r.totalEnCaja;
   const setAll=(base,v)=>{
     ['','-m','-b'].forEach(suf=>{
       const el=document.getElementById(base+suf);
@@ -9964,13 +10000,9 @@ function _renderCajonDetalle(){
     return;
   }
   if(tipo==='total'){
-    const fondo = parseFloat(localStorage.getItem('mg_fondo_caja'))||0;
-    const ventas = _getVentasSinCorte();
-    let efectivo=0,tarjeta=0,transferencia=0;
-    ventas.forEach(v=>{ const m=_metodoDe(v), t=parseFloat(v.total)||0; if(m==='tarjeta')tarjeta+=t; else if(m==='transferencia')transferencia+=t; else efectivo+=t; });
-    const totalRetiros=(retiros||[]).filter(r=>r.tipo==='retiro').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-    const totalDepositos=(retiros||[]).filter(r=>r.tipo==='deposito').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-    const totalEnCaja=efectivo-totalRetiros+totalDepositos;
+    const rc=_resumenCajaActual();
+    const fondo=rc.fondo, efectivo=rc.efectivo, tarjeta=rc.tarjeta, transferencia=rc.transferencia;
+    const totalRetiros=rc.totalRetiros, totalDepositos=rc.totalDepositos, totalEnCaja=rc.totalEnCaja;
     totalEl.textContent='$'+totalEnCaja.toFixed(2);
     list.innerHTML = `
       <div class="cajon-det-row"><span>Pagos en efectivo</span><span>+$${efectivo.toFixed(2)}</span></div>
@@ -9980,9 +10012,10 @@ function _renderCajonDetalle(){
     return;
   }
   if(tipo==='efectivo'||tipo==='tarjeta'||tipo==='transferencia'){
-    const ventas = (historial||[]).filter(v=>(!v.tipo||v.tipo==='venta') && _metodoDe(v)===tipo && _fechaCoincide(v.ts,ymd))
+    const base = ymd ? (historial||[]).filter(v=>_esVenta(v) && _fechaCoincide(v.ts,ymd)) : _getVentasSinCorte();
+    const ventas = base.filter(v=>_metodoDe(v)===tipo)
       .sort((a,b)=>{ const da=_tsADate(a.ts),db=_tsADate(b.ts); return (db?db.getTime():0)-(da?da.getTime():0); });
-    const total = ventas.reduce((s,v)=>s+(parseFloat(v.total)||0),0);
+    const total = ventas.reduce((s,v)=>_sumaC(s,v.total),0);
     totalEl.textContent='$'+total.toFixed(2);
     list.innerHTML = ventas.length ? ventas.map(v=>{
       const d=_tsADate(v.ts); const hora=d?d.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
@@ -10001,7 +10034,7 @@ function _renderCajonDetalle(){
     const tipoMov = tipo==='retiros' ? 'retiro' : 'deposito';
     const movs = _todosLosMovimientos(tipoMov).filter(r=>_fechaCoincide(r.ts,ymd))
       .sort((a,b)=>{ const da=_tsADate(a.ts),db=_tsADate(b.ts); return (db?db.getTime():0)-(da?da.getTime():0); });
-    const total = movs.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+    const total = movs.reduce((s,r)=>_sumaC(s,r.monto),0);
     totalEl.textContent='$'+total.toFixed(2);
     list.innerHTML = movs.length ? movs.map(r=>{
       const d=_tsADate(r.ts); const hora=d?d.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
@@ -10220,25 +10253,18 @@ async function _calcularResumenCorte(){
     }catch(e){ fondo=parseFloat(localStorage.getItem('mg_fondo_caja'))||0; }
   } else { fondo=parseFloat(localStorage.getItem('mg_fondo_caja'))||0; }
 
-  const ventas = _getVentasSinCorte();
-  let ventasEfectivo=0, ventasTarjeta=0, ventasTransferencia=0;
-  ventas.forEach(v=>{
-    const m=_metodoDe(v), t=parseFloat(v.total)||0;
-    if(m==='tarjeta') ventasTarjeta+=t; else if(m==='transferencia') ventasTransferencia+=t; else ventasEfectivo+=t;
-  });
-  const totalVentas = ventasEfectivo+ventasTarjeta+ventasTransferencia;
-  const totalRetiros=retiros.filter(r=>r.tipo==='retiro').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-  const totalDepositos=retiros.filter(r=>r.tipo==='deposito').reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
-  const totalEnCaja = ventasEfectivo-totalRetiros+totalDepositos; // sin fondo, sin tarjeta/transferencia
-  const totalFisico = fondo+totalEnCaja; // lo que debe haber físicamente en el cajón
-  return {fondo, ventas, totalVentas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, totalFisico};
+  const rc = _resumenCajaActual(fondo);
+  // Copia exacta de los movimientos que entran en ESTE corte (solo se borran esos)
+  const movs = JSON.parse(JSON.stringify(rc.movs));
+  return {fondo:rc.fondo, ventas:rc.ventas, totalVentas:rc.totalVentas, ventasEfectivo:rc.efectivo, ventasTarjeta:rc.tarjeta, ventasTransferencia:rc.transferencia,
+          totalRetiros:rc.totalRetiros, totalDepositos:rc.totalDepositos, totalEnCaja:rc.totalEnCaja, totalFisico:rc.totalFisico, movs};
 }
 
 async function hacerCorteDia(){
   const r = await _calcularResumenCorte();
   const {fondo, ventas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, totalFisico} = r;
 
-  window._corteEnCurso = {tipo:'corte-dia', fondo, totalVentas:r.totalVentas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, numVentas:ventas.length, ventaIds:ventas.map(v=>v.id)};
+  window._corteEnCurso = {tipo:'corte-dia', fondo, totalVentas:r.totalVentas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, numVentas:ventas.length, ventaIds:ventas.map(v=>v.id), movs:r.movs||[]};
 
   document.getElementById('fondo-cierre-titulo').textContent='Corte de día';
   document.getElementById('fondo-cierre-sub').textContent='Cierre del día — ¿cuánto dejas en caja para mañana?';
@@ -10273,12 +10299,25 @@ function _getTsUltimoCorte(){
 
 // Filtrar ventas que NO han sido incluidas en un corte previo
 function _getVentasSinCorte(){
-  const tsUltimo = _getTsUltimoCorte();
-  return historial.filter(h=>{
-    if(h.tipo && h.tipo!=='venta') return false;
-    const d = h.ts instanceof Date?h.ts:h.ts?.toDate?h.ts.toDate():new Date(h.ts||0);
-    // Si hay un corte previo, solo tomar ventas POSTERIORES a él
-    if(tsUltimo && d <= tsUltimo) return false;
+  const cortes = (historial||[]).filter(h=>h.tipo==='corte-turno'||h.tipo==='corte-dia')
+    .map(h=>({h, d:_tsADate(h.ts)})).filter(x=>x.d).sort((a,b)=>b.d-a.d);
+  const ventas = (historial||[]).filter(_esVenta);
+  if(!cortes.length) return ventas;
+  const ultimo = cortes[0];
+  if(!Array.isArray(ultimo.h.ventaIds)){
+    // Corte antiguo sin lista de ventas: se usa la fecha del corte
+    return ventas.filter(v=>{ const d=_tsADate(v.ts); return !d || d>ultimo.d; });
+  }
+  // Ventas incluidas en los dos últimos cortes (exacto por id)
+  const incluidas = new Set();
+  cortes.slice(0,2).forEach(x=>(x.h.ventaIds||[]).forEach(id=>incluidas.add(id)));
+  const limite = cortes[1] ? cortes[1].d : null; // lo anterior al penúltimo corte ya está cerrado
+  return ventas.filter(v=>{
+    if(incluidas.has(v.id)) return false;
+    const d=_tsADate(v.ts);
+    if(!d) return true; // venta recién registrada (aún sin hora del servidor)
+    if(limite && d<=limite) return false;
+    // Ventas anteriores al último corte que NO entraron en él (cobradas mientras se hacía el corte) siguen en caja
     return true;
   });
 }
@@ -10292,7 +10331,7 @@ async function cerrarTurno(){
     return;
   }
 
-  window._corteEnCurso = {tipo:'corte-turno', fondo, totalVentas:r.totalVentas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, numVentas:ventas.length, ventaIds:ventas.map(v=>v.id)};
+  window._corteEnCurso = {tipo:'corte-turno', fondo, totalVentas:r.totalVentas, ventasEfectivo, ventasTarjeta, ventasTransferencia, totalRetiros, totalDepositos, totalEnCaja, numVentas:ventas.length, ventaIds:ventas.map(v=>v.id), movs:r.movs||[]};
 
   document.getElementById('fondo-cierre-titulo').textContent='Corte de turno';
   document.getElementById('fondo-cierre-sub').textContent='Resumen del turno — ¿cuánto dejas en caja?';
@@ -10330,7 +10369,7 @@ async function confirmarCierreTurno(){
     numVentas: c.numVentas,
     ventaIds: c.ventaIds||[],
     fondoSiguiente,
-    retiros: JSON.parse(JSON.stringify(retiros)),
+    retiros: JSON.parse(JSON.stringify(c.movs||retiros)),
     mesero: NOMBRE||'Jefe'
   };
 
@@ -10340,8 +10379,10 @@ async function confirmarCierreTurno(){
     await addDoc(collection(window._db,'historial'),{...corteEntry,ts:serverTimestamp()}).catch(e=>console.error(e));
     _registrarAuditoria(c.tipo==='corte-dia'?'Corte de día':'Cierre de turno', `En caja: $${(c.totalEnCaja||0).toFixed(2)}`);
     // Limpiar todos los movimientos (retiros/depósitos)
-    const snapMov=await getDocs(collection(window._db,'caja_movimientos')).catch(()=>null);
-    if(snapMov) for(const d of snapMov.docs) await deleteDoc(doc(window._db,'caja_movimientos',d.id)).catch(e=>console.error(e));
+    // Borrar SOLO los movimientos que entraron en este corte (uno registrado mientras
+    // se confirmaba el corte se queda en el turno nuevo, no se pierde)
+    const idsCorte = new Set((c.movs||[]).map(m=>m.id).filter(id=>id && !String(id).startsWith('temp_')));
+    for(const id of idsCorte) await deleteDoc(doc(window._db,'caja_movimientos',id)).catch(e=>console.error(e));
     // Registrar fondo del siguiente turno en config/caja
     await setDoc(doc(window._db,'config','caja'),{fondo:fondoSiguiente,updatedAt:serverTimestamp(),actualizadoPor:NOMBRE||ROL}).catch(e=>console.error(e));
     // Actualizar localmente de inmediato (no esperar al listener de Firebase)
@@ -10353,7 +10394,7 @@ async function confirmarCierreTurno(){
     });
   } else {
     historial.unshift(corteEntry);
-    retiros=[];
+    { const ids=new Set((c.movs||[]).map(m=>m.id)); retiros=retiros.filter(r=>!ids.has(r.id)); }
     guardarRetiros();
     localStorage.setItem('mg_fondo_caja', fondoSiguiente);
     renderHistorial();
